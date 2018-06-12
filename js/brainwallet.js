@@ -35,21 +35,23 @@
 	//Default coin parameters.
 	//Bitcoin
 	
-/*
+
 	Default_COIN_NAME = "Bitcoin";
 	Default_TICKER = "BTC";
 	Default_PUBLIC_KEY_VERSION = 0x00;
     Default_PRIVATE_KEY_VERSION = 0x80;
     Default_ADDRESS_URL_PREFIX = 'http://blockchain.info';
 	Default_gen_compressed = false;
-*/
 
+
+/*
 	Default_COIN_NAME = "GeertCoin";
 	Default_TICKER = "GEERT";
 	Default_PUBLIC_KEY_VERSION = 0x26;
     Default_PRIVATE_KEY_VERSION = 0xa6;
     Default_ADDRESS_URL_PREFIX = 'https://prohashing.com/explorer/Geertcoin/';
 	Default_gen_compressed = true;
+*/
 /*
 To change default coin:
 	1. Change this parameters;

@@ -15,12 +15,12 @@ Notable features
 * Litecoin support
 ___________________________________________________________________________________________________________
 New changes:
-Add "javascript-file-encrypter".
-	- Add there option to upload text keyfile with password as test inside.
-	- add openFile function there to load text field by file value.
-Add key-file tab for downloading 32 bytes key, which can be using as password to encryption and decryption.
-This value is available in separate field "passphrase" and generating as:
-	this = SHA256(priv_hex) XOR sha256(hash_of_random_seed + current_addr);
+- Add "javascript-file-encrypter".
+ -- Add there option to upload text keyfile with password as test inside.
+ -- Add openFile function there to load text field by file value.
+- Add key-file tab for downloading 32 bytes key, which can be using as password to encryption and decryption.
+- This value is available in separate field "passphrase" and generating as:
+- -	this = SHA256(priv_hex) XOR sha256(hash_of_random_seed + current_addr);
 	downloading as text and as file. This function in beginning of brainwallet.js
 Come back the tab "Important Security Update!"
 

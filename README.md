@@ -14,7 +14,9 @@ Notable features
 * Signing and verifying messages with bitcoin address
 * Litecoin support
 ___________________________________________________________________________________________________________
-New changes:
+- New changes available on this page: https://username1565.github.io/brainwallet.github.io/
+- Source code - here: https://github.com/username1565/brainwallet.github.io
+- Changes:
 - Add "javascript-file-encrypter".
 - Add there option to upload text keyfile with password as test inside.
 - Add openFile function there to load text field by file value.

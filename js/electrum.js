@@ -1,8 +1,14 @@
 /*
     electrum.js : Electrum deterministic wallet implementation (public domain)
 */
+//define empty coin parameters. Select coin in the list.
+PUBLIC_KEY_VERSION;
+PRIVATE_KEY_VERSION;
+ADDRESS_URL_PREFIX;
+compressed;
 
-function electrum_extend_chain(pubKey, privKey, n, forChange, fromPrivKey) {
+function electrum_extend_chain(pubKey, privKey, n, forChange, fromPrivKey
+, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {
     var curve = getSECCurveByName("secp256k1");
     var mode = forChange ? 1 : 0;
     var mpk = pubKey.slice(1);
@@ -12,7 +18,7 @@ function electrum_extend_chain(pubKey, privKey, n, forChange, fromPrivKey) {
     var pt = ECPointFp.decodeFrom(curve.getCurve(), pubKey);
 
     var A;
-
+	
     if (fromPrivKey) {
         A = BigInteger.fromByteArrayUnsigned(sequence);
         var B = BigInteger.fromByteArrayUnsigned(privKey);
@@ -27,12 +33,49 @@ function electrum_extend_chain(pubKey, privKey, n, forChange, fromPrivKey) {
     var newPriv = secexp ? secexp.toByteArrayUnsigned(): [];
     for(;newPriv.length<32;) newPriv.unshift(0x00);
     var newPub = pt.getEncoded();
+	//document.write("fullpub = "+newPub+"<br>");
     var h160 = Bitcoin.Util.sha256ripe160(newPub);
+	//document.write("h160 = "+h160+"<br>");	
     var addr = new Bitcoin.Address(h160);
+	addr.version = PUBLIC_KEY_VERSION;
+	//document.write("addr = "+addr+"<br>");								//uncompressed address
+
     var sec = secexp ? new Bitcoin.Address(newPriv) : '';
     if (secexp)
-        sec.version = 128;
+        sec.version = PRIVATE_KEY_VERSION.toString(10) || 128; //default 128 = 0x80 for bitcoin private keys
 
+	if (compressed) {
+		plusonebyte = newPriv;
+		plusonebyte.push(0x01);												//Push 0x01 byte for compressed priv
+		compressed_priv = new Bitcoin.Address(newPriv);
+		compressed_priv.version = PRIVATE_KEY_VERSION.toString(10);
+	}
+	
+		//compressing public key
+	   var x = pt.getX().toBigInteger();
+       var y = pt.getY().toBigInteger();
+       var enc = integerToBytes(x, 32);
+       if (compressed) {
+         if (y.isEven()) {//byte of parity for Y-coordinate for the point on Elliptic-Curve
+           enc.unshift(0x02);
+         } else {
+           enc.unshift(0x03);
+         }
+       } else {
+         enc.unshift(0x04);
+         enc = enc.concat(integerToBytes(y, 32));
+       }
+	//document.write("enc = "+enc+"<br>");	//OK
+	
+    var h160 = Bitcoin.Util.sha256ripe160(enc); //push the compressed public key
+	//document.write("h160 = "+h160+"<br>");
+    var addr = new Bitcoin.Address(h160);
+	addr.version = PUBLIC_KEY_VERSION;
+	//document.write("addr = "+addr+"<br><br><br>");								//Uncompressed address
+
+	//sec - this is PRIVATE_KEY_VERSION + private_key + 4 bytes checksum
+	//addr - base58Chek from the hash of compressec public key
+	
     return [addr.toString(), sec.toString(), newPub, newPriv];
 }
 
@@ -74,15 +117,16 @@ var Electrum = new function () {
         }
     }
 
-    function calcAddr() {
-        var r = electrum_extend_chain(pubKey, privKey, counter<range ? counter : counter-range, counter >= range, true);
+    function calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {
+        var r = electrum_extend_chain(pubKey, privKey, counter<range ? counter : counter-range, counter >= range, true
+		, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         onUpdate(r);
         counter++;
         if (counter >= range+addChange) {
             if (onSuccess) 
                 onSuccess();
         } else {
-            timeout = setTimeout(calcAddr, 0);
+            timeout = setTimeout(calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed), 0);
         }
     }
 
@@ -96,14 +140,15 @@ var Electrum = new function () {
         calcSeed();
     };
 
-    this.gen = function(_range, update, success, useChange) {
+    this.gen = function(_range, update, success, useChange
+	, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {		
         addChange = useChange;
         range = _range;
         counter = 0;
         onUpdate = update;
         onSuccess = success;
         clearTimeout(timeout);
-        calcAddr();
+        calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
     };
 
     this.stop = function () {

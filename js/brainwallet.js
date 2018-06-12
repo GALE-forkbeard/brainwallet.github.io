@@ -1,17 +1,84 @@
+//brainwallet.js		
 (function($){
 
     var gen_from = 'pass';
-    var gen_compressed = false;
+	
+	var random_seed = '                                               \
+	//________________________________________________________________\
+	//Write here anything your,                                       \
+	//it can be unique identifier, text, hash, cipher,                \
+	//or another random but secret and not dynamic data.              \
+	//You can use result of work TRNG here.                           \
+	//This increases the cryptographic strength                       \
+	//of your simple passwords to complicate any dictionary attacks.  \
+	//________________________________________________________________\
+	b02bd7b8ad6262d840090f4d4a79c98b609e6d86fbad41756a29caba3fcbadd5 (unique hash for my keys)	\
+	';
+	//symbol "\" need for multi-string data.
+	//private key is base58Check of secret exponent hex.
+	//secret exponent now is hash(passphrase) XOR hash(random_seed)
+	//Maybe this random seed can be included to the seed parameters for armory and electrum generators.
+	
+	//see 
+	//in armory.js
+	//function armory_derive_chaincode(root,random_seed){
+	//var msg = 'Derive Chaincode from Root Key';
+	//and
+	//function armory_decode_keys(data, random_seed)
+
+	//and see electum chaincode derive function...
+	
+	//to desactivate it for using standart brainwallet, just comment all strings where is "\" and set this value - false
+    //P.S. you can do not comment previous parameter. Just uncomment this:
+	//var random_seed = false;
+	
+	//Default coin parameters.
+	//Bitcoin
+	
+/*
+	Default_COIN_NAME = "Bitcoin";
+	Default_TICKER = "BTC";
+	Default_PUBLIC_KEY_VERSION = 0x00;
+    Default_PRIVATE_KEY_VERSION = 0x80;
+    Default_ADDRESS_URL_PREFIX = 'http://blockchain.info';
+	Default_gen_compressed = false;
+*/
+
+	Default_COIN_NAME = "GeertCoin";
+	Default_TICKER = "GEERT";
+	Default_PUBLIC_KEY_VERSION = 0x26;
+    Default_PRIVATE_KEY_VERSION = 0xa6;
+    Default_ADDRESS_URL_PREFIX = 'https://prohashing.com/explorer/Geertcoin/';
+	Default_gen_compressed = true;
+/*
+To change default coin:
+	1. Change this parameters;
+	2. Change list <li class="dropdown" id="crCurrency">
+	3. set ticker here <span id="crName">BTC</span>
+	4. set default start compressed or uncompressed button as class active:
+		<label class="btn btn-default active" name="uncomp" title="Uncompressed keys (reference client)">
+		or <label class="btn btn-default" name="comp" title="Compressed keys (introduced in 0.5.99)">
+	5. That's all.
+*/
+
+	
+	//set next variable
+	var coin_name = Default_COIN_NAME;
+	var ticker = Default_TICKER;
+	var PUBLIC_KEY_VERSION = Default_PUBLIC_KEY_VERSION;
+    var PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+    var ADDRESS_URL_PREFIX = Default_ADDRESS_URL_PREFIX;
+	var gen_compressed = Default_gen_compressed;
+	
+	
     var gen_eckey = null;
     var gen_pt = null;
     var gen_ps_reset = false;
     var TIMEOUT = 600;
     var timeout = null;
-
-    var PUBLIC_KEY_VERSION = 0;
-    var PRIVATE_KEY_VERSION = 0x80;
-    var ADDRESS_URL_PREFIX = 'http://blockchain.info'
-
+	
+	var hash_of_random_seed = Crypto.SHA256(random_seed);		//hash of random seed
+	
     function parseBase58Check(address) {
         var bytes = Bitcoin.Base58.decode(address);
         var end = bytes.length - 4;
@@ -34,7 +101,7 @@
         else
             return [0x80|2, len >> 8, len & 0xff];
     }
-    
+
     encode_id = function(id, s) {
         var len = encode_length(s.length);
         return [id].concat(len).concat(s);
@@ -111,7 +178,7 @@
                     encode_integer(1)
                 )
             ),
-            encode_constructed(1, 
+            encode_constructed(1,
                 encode_bitstring([0].concat(encoded_pub))
             )
         );
@@ -147,6 +214,16 @@
         generate();
     }
 
+	function gen_update_sec_exp() {
+        $('#pass').val('');
+        $('#hash').focus();
+        gen_from = 'hash';
+        $('#from_hash').click();
+        genUpdate();
+        var bytes = Crypto.util.hexToBytes($('#hash').val());
+        generate();
+    }
+	
     function genUpdate() {
         setErrorState($('#hash'), false);
         setErrorState($('#sec'), false);
@@ -171,11 +248,14 @@
             $('#hash').focus();
         } else if (gen_from == 'sec') {
             $('#sec').focus();
+			if ($('#sec').closest('.form-group').css('display') == 'none'){
+				$('#toggleKeyCode').trigger("click");			
+			}
         } else if (gen_from == 'der') {
             $('#der').focus();
         }
     }
-
+	
     function generate() {
         var hash_str = pad($('#hash').val(), 64, '0');
         var hash = Crypto.util.hexToBytes(hash_str);
@@ -196,11 +276,11 @@
 
         gen_update();
     }
-
+		
     function genOnChangeCompressed() {
         setErrorState($('#hash'), false);
         setErrorState($('#sec'), false);
-        gen_compressed = $(this).attr('name') == 'compressed';
+        gen_compressed = ($(this).attr('name') == 'compressed');
         gen_eckey.pub = getEncoded(gen_pt, gen_compressed);
         gen_eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(gen_eckey.pub);
         gen_update();
@@ -218,32 +298,113 @@
           return ADDRESS_URL_PREFIX+'/address/'+addr;
     }
 
-    function gen_update() {
-
-        var eckey = gen_eckey;
+	//XOR hex strings function
+	function XOR_hex(a, b) {
+		var res = "",
+			i = a.length,
+			j = b.length;
+		while (i-- >0 && j-- >0)
+			res = (parseInt(a.charAt(i), 16) ^ parseInt(b.charAt(j), 16)).toString(16) + res;
+		
+		//document.write(res+"<br>"); //comment it
+		return res;
+	}
+	
+    function gen_update(segwit_addr) {
+		segwit_addr = segwit_addr || false;
+		
         var compressed = gen_compressed;
+		var eckey = gen_eckey;
+		//if(compressed){ //if key is compressed
+		//	//push 0x01 byte from beginning - to BigInteger (priv * 0x100 + 0x01)
+		//	eckey['priv'] = eckey['priv'].multiply(new BigInteger('100', 16)).add(new BigInteger('1')).toString(16);
+		//}
+		
+		//console.log('push 0x01 to bigint: ', eckey.multiply(new BigInteger('100', 16)).add(new BigInteger('1')).toString());
+		
+        //eckey = eckey.setCompressed(compressed);
+		//console.log('compressed.... eckey', eckey.toString());
+        
 
-        var hash_str = pad($('#hash').val(), 64, '0');
-        var hash = Crypto.util.hexToBytes(hash_str);
+        var hash_str = pad($('#hash').val(), 64, '0'); //secret exponent
+        var hash = Crypto.util.hexToBytes(hash_str); //bytes
+		
+		
+        
+        
+		if(segwit_addr===true){	//SegWit address
+			pubkey = Crypto.util.bytesToHex(getEncoded(gen_pt, compressed));
+			var hash160 = [0x00,0x14].concat(Bitcoin.Util.sha256ripe160(getEncoded(gen_pt, compressed)));
+			hash160 = Bitcoin.Util.sha256ripe160(hash160);
+			//add tooltip
+			$('#addr').attr('title', "SegWit format Address [0x00,0x14]");
+			$('#h160').attr('title', "SegWit format hash160 [0x00,0x14]");
+			
+			var h160 = Crypto.util.bytesToHex(hash160);
+			$('#h160').val(h160);
+			var addr = new Bitcoin.Address(hash160);
+			addr.version = PUBLIC_KEY_VERSION;
+			
+		}else if(segwit_addr==='ZCash_t-addr'){
+			//code...
+			var hash160 = eckey.getPubKeyHash();
+			hash160 = [0xb8].concat(hash160);
+			//add tooltip
+			$('#addr').attr('title', 'ZCash t-address [0x1c,0xb8]\n\
+To convert t-addresses (ZCash, Votecoin, and another coins)\n\
+to your associated bitcoin address\n\
+	1. Go to Converter tab\n\
+	2. Copy and paste your t-address there \n\
+	3. from Base58Check -> to Hex\n\
+	4. Copy this hex and discard the byte b8 at first in this hex\n\
+	5. Convert the remaining hexadecimal value from hex to Base58Check.\n\
+	6. Check in the bottom "B58Check ver. 0x00 (34 characters)"\n\
+	7. Copy and paste your bitcoin address.');//many strings tooltip
+			$('#h160').attr('title', 'ZCash byte 0xb8 inserted here');
+			
+			var h160 = Crypto.util.bytesToHex(hash160);
+			$('#h160').val(h160);
+			var addr = new Bitcoin.Address(hash160);
+			addr.version = 0x1c;						//t-addressed prefix PUBLIC_KEY_VERSION byte
+			
+		}else{					//default address
+			//а он может быть компрессед или ункомпрессед.
+			
+			eckey.pub = getEncoded(gen_pt, compressed);
+			eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(eckey.pub);
+			var hash160 = eckey.getPubKeyHash();
+			//return default tooltip 
+			$('#addr').attr('title', "Bitcoin Address (Base58Check of HASH160)");
+			$('#h160').attr('title', "Hex-encoded address, RIPEMD160(SHA256(Public Key))");
+			
+			var h160 = Crypto.util.bytesToHex(hash160);
+			$('#h160').val(h160);
+			var addr = new Bitcoin.Address(hash160);
+			addr.version = PUBLIC_KEY_VERSION;
+		}
 
-        var hash160 = eckey.getPubKeyHash();
-
-        var h160 = Crypto.util.bytesToHex(hash160);
-        $('#h160').val(h160);
-
-        var addr = new Bitcoin.Address(hash160);
-        addr.version = PUBLIC_KEY_VERSION;
         $('#addr').val(addr);
+		$('#name').val($('#addr').val()+".txt");				//addr to key file name
 
-        var payload = hash;
+		var payload = hash;					//bytes of secret exponent
+		if (compressed)
+            payload.push(0x01);						//push 0x01 if compressed
 
-        if (compressed)
-            payload.push(0x01);
-
-        var sec = new Bitcoin.Address(payload);
-        sec.version = PRIVATE_KEY_VERSION;
-        $('#sec').val(sec);
-
+		
+        var sec = new Bitcoin.Address(payload); //correctly updated
+		sec.version = PRIVATE_KEY_VERSION;
+		
+		$('#sec').val(sec);
+		$('#sgSec').val($('#sec').val());
+		$('#sgAddr').val($('#addr').val());
+		
+		hex_of_priv = Crypto.util.bytesToHex(payload);
+		
+		//$('#keyfiledata').val(hex_of_priv);	//priv_in_hex. This value is depended from set compressed or uncompressed key.
+		$('#keyfiledata').val(XOR_hex(Crypto.SHA256(hex_of_priv), Crypto.SHA256(hash_of_random_seed+addr)));
+		//key = sha256(priv) XOR sha256(sha256(random_seed+addr));
+		//This value depended from selected coin, because prefix of public key for this coin included to dynamic seed.
+		
         var pub = Crypto.util.bytesToHex(getEncoded(gen_pt, compressed));
         $('#pub').val(pub);
 
@@ -259,11 +420,84 @@
         $('#genAddrQR').html(qrCode.createImgTag(4));
         $('#genAddrURL').attr('href', getAddressURL(addr));
         $('#genAddrURL').attr('title', addr);
-    }
 
+        var keyQRCode = qrcode(3, 'L');
+        var text = $('#sec').val();
+        text = text.replace(/^[\s\u3000]+|[\s\u3000]+$/g, '');
+        keyQRCode.addData(text);
+        keyQRCode.make();
+
+        $('#genKeyQR').html(keyQRCode.createImgTag(4));
+        // NMC fix
+        if (ADDRESS_URL_PREFIX.indexOf('explorer.dot-bit.org')>=0 )
+          $('#genAddrURL').attr('href', ADDRESS_URL_PREFIX+'/a/'+addr);
+
+        // chainbrowser fix (needs closing slash for some reason)
+        if (ADDRESS_URL_PREFIX.indexOf('chainbrowser.com')>=0 )
+          $('#genAddrURL').attr('href', ADDRESS_URL_PREFIX+'/address/'+addr+'/');
+
+		
+		var ticker = $('#coin_name').attr('ticker');
+		var coin_name = $('#coin_name').attr('coin_name');
+		$('#altcoin_name').text(coin_name || Default_COIN_NAME);
+		$('#ticker').text(ticker || Default_TICKER);
+		$('#coin_name').text((coin_name || Default_COIN_NAME).toUpperCase() + ' (' + (ticker || Default_TICKER) + ')');
+		
+		
+		PubVer = parseInt(PUBLIC_KEY_VERSION);
+		if(PubVer<=15){firstbyte ='0';}else{firstbyte = '';}
+		$('#PubVer').text('Public key version byte: 0x'+firstbyte+PubVer.toString(16));
+		
+		PrivVer = parseInt(PRIVATE_KEY_VERSION);
+		if(PrivVer<=15){firstbyte ='0';}else{firstbyte = '';}
+		$('#PrivVer').text('Private key version byte: 0x'+firstbyte+PrivVer.toString(16));
+		if(compressed==true){
+			$('#compressed').text('Keys and addresses: Compressed');
+		}else{
+			$('#compressed').text('Keys and addresses: Uncompressed');
+		}
+		$('#block_explorer').text("Block-explorer: "+ADDRESS_URL_PREFIX);
+		$('#block_explorer').attr('href', ADDRESS_URL_PREFIX);
+	}	
+			
+	//sec_exponent = hash(passphrase) XOR hash(random_seed)
     function genCalcHash() {
-        var hash = Crypto.SHA256($('#pass').val(), { asBytes: true });
-        $('#hash').val(Crypto.util.bytesToHex(hash));
+		//document.write("<br>random_seed "+random_seed);			//test random_seed value in this function.
+		
+		if(random_seed == false){//if random_seed not active
+			//using original brainwallet function
+			var hash = Crypto.SHA256($('#pass').val());
+		}else{
+			//using brainwallet with specified random_seed
+			//using xor at hash(random_seed). This was been defined.
+			
+			var hash_of_passphase = Crypto.SHA256($('#pass').val());	//this value is depending from entered passphrase.
+			var hash = XOR_hex(hash_of_random_seed, hash_of_passphase); //XOR this two hashes
+
+			//document.write("<br>hash_of_random_seed "+hash_of_random_seed); 	//print value of hash random_seed
+			//0a743e5fcb375bcc6b9a044b6df5feaa309e939d9a29275265c3ecdb025bf905
+			
+			//you can see it in converter page
+			//uncomment this two strings and press sha256-button in the section Converter
+			//$('#src').val(random_seed);
+			//$('#enc_to [id="to_sha256"]').addClass('active');
+			//result 0a743e5fcb375bcc6b9a044b6df5feaa309e939d9a29275265c3ecdb025bf905			
+		}
+	
+		//document.write("<br>hash is secret exponent: "+hash); //echo value of new secret exponent
+		$('#hash').val(hash);		//set up hash_of_random_seed in the field of form.
+		$('#hash_random_seed').val(hash_of_random_seed);		//set up secret exponent in the field of form.
+		$('#chhash_random_seed').val(hash_of_random_seed);
+		$('#hash_passphrase').val(hash_of_passphase);		//set up secret exponent in the field of form.
+		
+		//This value is a private key hex.
+		//Generator -> press "Togle Key" button -> Private key WIF -> converter -> from Base58Check to hex -> is this value.
+		//from Base58Check: 5KbEudEWZMr38UFxUrEww3ERKt3Pcc665cuQXBh3zoH6GZvkyBN
+		//to hex: e9c4fa1d53cb47d8f161f083f49a478e1730d279feb2b41ec15675c07a094150
+		//== Secret Exponent == hash value.
+		
+		//So when random_seed is defined and not false,
+		//then private_key = Base58Check(hash(passphase) XOR hash(random_seed));
     }
 
     function onChangePass() {
@@ -288,12 +522,26 @@
     }
 
     function setCompressed(compressed) {
-      gen_compressed = compressed; // global
+      gen_compressed = compressed || Default_gen_compressed; // global
       // toggle radio button without firing an event
       $('#gen_comp label input').off();
       $('#gen_comp label input[name='+(gen_compressed?'compressed':'uncompressed')+']').click();
       $('#gen_comp label input').on('change', genOnChangeCompressed);
     }
+	
+	function setSegwitAddr(segwit_addr) {
+	  if(segwit_addr==="SegWit address"){segwit_addr=true;}
+	  else if(segwit_addr==="ZCash t-address"){segwit_addr='ZCash_t-addr'}
+	  else{segwit_addr=false;}
+      // toggle radio button without firing an event
+      //$('#gen_comp label input').off();
+      //$('#gen_comp label input[name='+(gen_compressed?'compressed':'uncompressed')+']').click();
+      //$('#gen_comp label input').on('change', genOnChangeCompressed);
+	  //document.write(segwit_addr);
+	  gen_update(segwit_addr);
+    }
+	
+	
 
     function genOnChangePrivKey() {
 
@@ -304,7 +552,7 @@
 
         var sec = $('#sec').val();
 
-        try { 
+        try {
             var res = parseBase58Check(sec);
             var version = res[0];
             var payload = res[1];
@@ -385,20 +633,178 @@
     var to = 'hex';
 
     function update_enc_from() {
-        $(this).addClass('active');
+        $(this).addClass('active');	//add class "active" for input...
         from = $(this).attr('id').substring(5);
         translate();
     }
 
     function update_enc_to() {
+        $(this).addClass('active');
         to = $(this).attr('id').substring(3);
         translate();
     }
 
+	//f3e7d2655e60ab06ca99ddd187f84f49782bb47bac397e9cba677194a643b3c4 from hex -> encoded to text as
+	//óçÒe^`«ÊÝÑøOIx+´{¬9~ºgq¦C³Ä
+	//that's ok, here: http://www.convertstring.com/EncodeDecode/HexDecode
+	//but here... http://www.endmemo.com/unicode/unicodeconverter.php
+	//UTF-8 Code (e.g. 20 E2 88 9A): - give an another hex...
+	
+	//C3 B3 C3 A7 C3 92 65 5E 60 C2 AB 06 C3 8A C2 99 C3 9D C3 91 C2 87 C3 B8 4F 49 78 2B
+	//C2 B4 7B C2 AC 39 7E C2 9C C2 BA 67 71 C2 94 C2 A6 43 C2 B3 C3 84
+	//this hex in the source code of text file:
+	//Offset      0  1  2  3  4  5  6  7   8  9 10 11 12 13 14 15
+	//00000000   C3 B3 C3 A7 C3 92 65 5E  60 C2 AB 06 C3 8A C2 99   ГіГ§Г’e^`В« ГЉВ™
+	//00000016   C3 9D C3 91 C2 87 C3 B8  4F 49 78 2B C2 B4 7B C2   ГќГ‘В‡ГёOIx+Вґ{В
+	//00000032   AC 39 7E C2 9C C2 BA 67  71 C2 94 C2 A6 43 C2 B3   ¬9~ВњВєgqВ”В¦CВі
+	//00000048   C3 84                                              Г„
+	
+	//but real hex file have this code
+	//Offset      0  1  2  3  4  5  6  7   8  9 10 11 12 13 14 15
+	//00000000   F3 E7 D2 65 5E 60 AB 06  CA 99 DD D1 87 F8 4F 49   узТe^`« К™ЭС‡шOI
+	//00000016   78 2B B4 7B AC 39 7E 9C  BA 67 71 94 A6 43 B3 C4   x+ґ{¬9~њєgq”¦CіД
+	
+	
+/*
+Hex to ASCII text conversion table
+Hexadecimal	Binary	ASCII
+Character
+00	00000000	NUL
+01	00000001	SOH
+02	00000010	STX
+03	00000011	ETX
+04	00000100	EOT
+05	00000101	ENQ
+06	00000110	ACK
+07	00000111	BEL
+08	00001000	BS
+09	00001001	HT
+0A	00001010	LF
+0B	00001011	VT
+0C	00001100	FF
+0D	00001101	CR
+0E	00001110	SO
+0F	00001111	SI
+10	00010000	DLE
+11	00010001	DC1
+12	00010010	DC2
+13	00010011	DC3
+14	00010100	DC4
+15	00010101	NAK
+16	00010110	SYN
+17	00010111	ETB
+18	00011000	CAN
+19	00011001	EM
+1A	00011010	SUB
+1B	00011011	ESC
+1C	00011100	FS
+1D	00011101	GS
+1E	00011110	RS
+1F	00011111	US
+20	00100000	Space
+21	00100001	!
+22	00100010	"
+23	00100011	#
+24	00100100	$
+25	00100101	%
+26	00100110	&
+27	00100111	'
+28	00101000	(
+29	00101001	)
+2A	00101010	*
+2B	00101011	+
+2C	00101100	,
+2D	00101101	-
+2E	00101110	.
+2F	00101111	/
+30	00110000	0
+31	00110001	1
+32	00110010	2
+33	00110011	3
+34	00110100	4
+35	00110101	5
+36	00110110	6
+37	00110111	7
+38	00111000	8
+39	00111001	9
+3A	00111010	:
+3B	00111011	;
+3C	00111100	<
+3D	00111101	=
+3E	00111110	>
+3F	00111111	?
+40	01000000	@
+41	01000001	A
+42	01000010	B
+43	01000011	C
+44	01000100	D
+45	01000101	E
+46	01000110	F
+47	01000111	G
+48	01001000	H
+49	01001001	I
+4A	01001010	J
+4B	01001011	K
+4C	01001100	L
+4D	01001101	M
+4E	01001110	N
+4F	01001111	O
+50	01010000	P
+51	01010001	Q
+52	01010010	R
+53	01010011	S
+54	01010100	T
+55	01010101	U
+56	01010110	V
+57	01010111	W
+58	01011000	X
+59	01011001	Y
+5A	01011010	Z
+5B	01011011	[
+5C	01011100	\
+5D	01011101	]
+5E	01011110	^
+5F	01011111	_
+60	01100000	`
+61	01100001	a
+62	01100010	b
+63	01100011	c
+64	01100100	d
+65	01100101	e
+66	01100110	f
+67	01100111	g
+68	01101000	h
+69	01101001	i
+6A	01101010	j
+6B	01101011	k
+6C	01101100	l
+6D	01101101	m
+6E	01101110	n
+6F	01101111	o
+70	01110000	p
+71	01110001	q
+72	01110010	r
+73	01110011	s
+74	01110100	t
+75	01110101	u
+76	01110110	v
+77	01110111	w
+78	01111000	x
+79	01111001	y
+7A	01111010	z
+7B	01111011	{
+7C	01111100	|
+7D	01111101	}
+7E	01111110	~
+7F	01111111	DEL
+*/
+
+//I don't see this symbols here, so link "download as binary." was been added.
+
     // stringToBytes, exception-safe
     function stringToBytes(str) {
       try {
-        var bytes = Crypto.charenc.UTF8.stringToBytes(str);
+        var bytes = Crypto.chardec.UTF8.stringToBytes(str);		//char decode
       } catch (err) {
         var bytes = [];
         for (var i = 0; i < str.length; ++i)
@@ -410,15 +816,16 @@
     // bytesToString, exception-safe
     function bytesToString(bytes) {
       try {
-        var str = Crypto.charenc.UTF8.bytesToString(bytes);
+        var str = Crypto.charenc.UTF8.bytesToString(bytes); 	//char encode
       } catch (err) {
         var str = '';
         for (var i = 0; i < bytes.length; ++i)
             str += String.fromCharCode(bytes[i]);
       }
+	  
       return str;
     }
-
+	
 
     function isHex(str) {
         return !/[^0123456789abcdef]+/i.test(str);
@@ -445,7 +852,7 @@
         if (min_words>b.length)
             return false;
         for (var i = 0; i < b.length; i++) {
-            if (a.indexOf(b[i].toLowerCase()) == -1 
+            if (a.indexOf(b[i].toLowerCase()) == -1
                 && a.indexOf(b[i].toUpperCase()) == -1)
             return false;
         }
@@ -488,6 +895,8 @@
           // arbitrary text should have higher priority than base58
           enc.push('base58');
         }
+		
+		enc.push('raw');	//just push raw here, to don't disable this.
         return enc;
     }
 
@@ -510,6 +919,26 @@
               $('#from_' + from).click();
             }
         }
+
+		if($('#from_raw').hasClass('active')){
+				$('#src').attr("readonly", "readonly");
+//Here you can see a multistring commentary as multistring title.
+				$('#src').attr('title', "Select the file to import RAW-data.\n\
+Here will be base64-encoded file-content.\n\n\
+Or select another encoding to input the text here.");
+				$('#upload_source_from_file').attr('onchange', 'openFile(event, "src", "as_base64");')
+		}else{
+			$('#src').prop('title', false);
+			$('#src').removeAttr('title');
+		}
+		
+		
+		if($('#to_base58check').hasClass('active') && $('#from_base58check').hasClass('active')){
+			$('#dest').attr('title', "If this is a converted address for any coin, selected in the list - this is an uncompressed address.");
+		}else{
+			$('#dest').removeAttr('title'); //remove attribute
+		}
+		
     }
 
     function rot13(str) {
@@ -612,7 +1041,12 @@
           $('#hint_from').text('');
           $('#hint_to').text('');
           $('#dest').val('');
-          return;
+		  
+		  //hide download links if empty from src field is empty.
+          $('#download_as_binary').hide();
+          $('#download-converted').hide();
+          
+		  return;
         }
 
         text = str;
@@ -627,36 +1061,43 @@
         var addVersionByte = true; // for base58check
 
         if (bytes.length > 0) {
-            var bstr = str.replace(/[ :,\n]+/g,'').trim();
+		
+			if (from == 'raw') {
+				var bstr = str;
+				try { bytes = Crypto.util.base64ToBytes(bstr); } catch (err) {}
+				var already_encoded_b64 = true;
+			}
+            else{
+				var bstr = str.replace(/[ :,\n]+/g,'').trim();
 
-            if (from == 'base58check') {
-                try {
-                    var res = parseBase58Check(bstr);
-                    type = ' ver. 0x' + Crypto.util.bytesToHex([res[0]]);
-                    bytes = res[1];
-                    if (!addVersionByte)
-                      bytes.unshift(res[0]);
-                } catch (err) {};
-            } else if (from == 'base58') {
-                bytes = Bitcoin.Base58.decode(bstr);
-            } else if (from == 'hex') {
-                bytes = Crypto.util.hexToBytes(bstr.length%2?'0'+bstr:bstr); // needs padding
-            } else if (from == 'rfc1751') {
-                try { bytes = english_to_key(str); } catch (err) { type = ' ' + err; bytes = []; };
-            } else if (from == 'mnemonic') {
-                bytes = Crypto.util.hexToBytes(mn_decode(str.trim()));
-            } else if (from == 'base64') {
-                try { bytes = Crypto.util.base64ToBytes(bstr); } catch (err) {}
-            } else if (from == 'rot13') {
-                bytes = stringToBytes(rot13(str));
-            } else if (from == 'bin') {
-                bytes = fromBin(str);
-            } else if (from == 'easy16') {
-                bytes = fromEasy16(str);
-            } else if (from == 'dec') {
-                bytes = fromDec(bstr);
-            }
-
+				if (from == 'base58check') {
+					try {
+						var res = parseBase58Check(bstr);
+						type = ' ver. 0x' + Crypto.util.bytesToHex([res[0]]);
+						bytes = res[1];
+						if (!addVersionByte)
+						bytes.unshift(res[0]);
+					} catch (err) {};
+				} else if (from == 'base58') {
+					bytes = Bitcoin.Base58.decode(bstr);
+				} else if (from == 'hex') {
+					bytes = Crypto.util.hexToBytes(bstr.length%2?'0'+bstr:bstr); // needs padding
+				} else if (from == 'rfc1751') {
+					try { bytes = english_to_key(str); } catch (err) { type = ' ' + err; bytes = []; };
+				} else if (from == 'mnemonic') {
+					bytes = Crypto.util.hexToBytes(mn_decode(str.trim()));
+				} else if (from == 'base64') {
+					try { bytes = Crypto.util.base64ToBytes(bstr); } catch (err) {}
+				} else if (from == 'rot13') {
+					bytes = stringToBytes(rot13(str));
+				} else if (from == 'bin') {
+					bytes = fromBin(str);
+				} else if (from == 'easy16') {
+					bytes = fromEasy16(str);
+				} else if (from == 'dec') {
+					bytes = fromDec(bstr);
+				}
+			}
             var ver = '';
             if (to == 'base58check') {
                var version = bytes.length <= 20 ? PUBLIC_KEY_VERSION : PRIVATE_KEY_VERSION;
@@ -673,6 +1114,7 @@
                 text = Crypto.util.bytesToHex(bytes);
             } else if (to == 'text') {
                 text = bytesToString(bytes);
+				console.log(bytes);
             } else if (to == 'rfc1751') {
                 text = key_to_english(pad_array(bytes,8));
             } else if (to == 'mnemonic') {
@@ -685,6 +1127,8 @@
                 text = toBin(bytes);
             } else if (to == 'easy16') {
                 text = toEasy16(pad_array(bytes,32));
+            } else if (to == 'sha256') {
+                text = Crypto.SHA256(bytes);
             } else if (to == 'dec') {
                 text = toDec(bytes);
             }
@@ -693,6 +1137,20 @@
         $('#hint_from').text(enct(from) + type + ' (' + bytes.length + ' byte' + (bytes.length == 1 ? ')' : 's)'));
         $('#hint_to').text(enct(to) + ver + ' (' + text.length + ' character' + (text.length == 1 ? ')' : 's)'));
         $('#dest').val(text);
+		
+		
+		if(already_encoded_b64===true){
+			var base64 = bstr;
+			console.log('bstr', bstr);
+		}else{
+			var base64 = Crypto.util.bytesToBase64(bytes);
+		}
+			$('#download_as_binary').attr('href', "data:application/octet-stream;base64,"+base64);
+		
+		linkText(document.getElementById('dest'), document.getElementById('download-converted'), 'converted.txt')
+		
+		$('#download_as_binary').show();
+		$('#download-converted').show();
     }
 
     function onChangeFrom() {
@@ -729,7 +1187,7 @@
             $('#chList').text('');
             chOnStop();
         }
-
+		
         $('#chChange').attr('disabled', id != 'electrum');
 
         chType = id;
@@ -812,10 +1270,10 @@
         }
 
         if (chType == 'armory') {
-            var keys = armory_decode_keys(str);
+            var keys = armory_decode_keys(str, random_seed);	
             if (keys != null) {
                 var pk = keys[0];
-                var cc = keys[1];
+                var cc = keys[1];				
                 $('#chRoot').val(Crypto.util.bytesToHex(pk));
                 $('#chCode').val(Crypto.util.bytesToHex(cc));
 
@@ -843,10 +1301,14 @@
         var pk = secureRandom(32);
 
         if (chType == 'armory') {
-            var cc = armory_derive_chaincode(pk);
+            var cc = armory_derive_chaincode(pk, random_seed);
             $('#chRoot').val(Crypto.util.bytesToHex(pk));
             $('#chCode').val(Crypto.util.bytesToHex(cc));
-            $('#chBackup').val(armory_encode_keys(pk, cc).split('\n').slice(0,2).join('\n'));
+            //original seed value
+			//$('#chBackup').val(armory_encode_keys(pk, cc).split('\n').slice(0,2).join('\n'));
+			//two strings seed without chain code
+			$('#chBackup').val(armory_encode_keys(pk, cc).split('\n').slice(0,4).join('\n'));
+			//four strings seed with chain code in two last
         }
 
         if (chType == 'electrum') {
@@ -889,7 +1351,8 @@
         $('#chMsg').text('');
         $('#chCode').val(Crypto.util.bytesToHex(privKey));
         var addChange = parseInt($('#chChange').val());
-        Electrum.gen(chRange, chCallback, chUpdate, addChange);
+        Electrum.gen(chRange, chCallback, chUpdate, addChange
+		, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
     }
 
     function chUpdateRange() {
@@ -901,12 +1364,14 @@
         if (chType == 'electrum') {
             var addChange = parseInt($('#chChange').val());
             Electrum.stop();
-            Electrum.gen(chRange, chCallback, chUpdate, addChange);
+            Electrum.gen(chRange, chCallback, chUpdate, addChange
+			, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         }
 
         if (chType == 'armory') {
             var codes = $('#chBackup').val();
-            Armory.gen(codes, chRange, chCallback, chUpdate);
+            Armory.gen(codes, chRange, chCallback, chUpdate
+			, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         }
     }
 
@@ -930,14 +1395,14 @@
         }
 
         if (chType == 'armory') {
-            var uid = Armory.gen(codes, chRange, chCallback, chUpdate);
+            var uid = Armory.gen(codes, chRange, chCallback, chUpdate
+			, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
             if (uid)
                 $('#chMsg').text('uid: ' + uid);
             else
                 return;
         }
     }
-
     // -- transactions --
 
     var txType = 'txBCI';
@@ -997,7 +1462,7 @@
     function txGetUnspent() {
         var addr = $('#txAddr').val();
 
-        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&address=' + addr :
+        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&active=' + addr :
             'https://blockexplorer.com/q/mytransactions/' + addr;
 
         url = prompt('Press OK to download transaction history:', url);
@@ -1009,7 +1474,7 @@
             $.getJSON(url, function(data) {
               txParseUnspent ( JSON.stringify(data, null, 2) );
             }).fail(function(jqxhr, textStatus, error) {
-              alert( typeof(jqxhr.responseText)=='undefined' ? jqxhr.statusText 
+              alert( typeof(jqxhr.responseText)=='undefined' ? jqxhr.statusText
                 : ( jqxhr.responseText!='' ? jqxhr.responseText : 'No data, probably Access-Control-Allow-Origin error.') );
             });
 
@@ -1115,7 +1580,7 @@
         var fee = parseFloat('0'+$('#txFee').val());
 
         try {
-            var res = parseBase58Check(sec); 
+            var res = parseBase58Check(sec);
             var version = res[0];
             var payload = res[1];
         } catch (err) {
@@ -1273,7 +1738,7 @@
         return res;
     }
 
-    // -- sign --
+    // -- sign --	
     function updateAddr(from, to, bUpdate) {
         setErrorState(from, false);
         var sec = from.val();
@@ -1281,7 +1746,7 @@
         var eckey = null;
         var compressed = false;
         try {
-            var res = parseBase58Check(sec); 
+            var res = parseBase58Check(sec);
             var privkey_version = res[0];
             var payload = res[1];
 
@@ -1382,6 +1847,9 @@
       }
 
       $('#sgLabel').html(label);
+	  linkText(document.getElementById('sgSig'), document.getElementById('download-signed'), 'signed.txt')
+		$('#download-signed').show();
+	  
     }
 
     // -- verify --
@@ -1481,7 +1949,8 @@
           vrSig = p.signature;
 
           // try armory first
-          addr = armory_verify_message(p);
+          addr = armory_verify_message(p
+		  ,PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         } else {
           p = { "type": "bitcoin_qt", "address":vrAddr, "message": vrMsg, "signature": vrSig };
         }
@@ -1538,26 +2007,134 @@
 
     function crChange()
     {
-      var p = $(this).attr('data-target').split(',',2);
-      if (p.length>0)
-        PUBLIC_KEY_VERSION = parseInt(p[0]);
-      PRIVATE_KEY_VERSION = p.length>1 ? parseInt(p[1]) : ((PUBLIC_KEY_VERSION+128) & 255);
-      ADDRESS_URL_PREFIX = $(this).attr('href');
+      var p = $(this).attr('data-target').split(',',3);	  
+	  //using default parameters if not all was been specified
+	  /*
+		compressed, pubVer;		privVer - default;
+		pubVer, privVer;		compressed = false - by default;
+		pubVer;					privVer and compressed - by default;
+		compressed only;		privVer, pubVer - by default.
+	  */
+	  
+	  if (p.length>0)
+	  //use compressed private key and compressed address or need to use uncompressed both???
+		if(p[0] == 'compressed'){compressed = true;}
+		else{
+			if(p[0] == 'uncompressed'){compressed = false;}
+			else{//uncompressed as default format for private keys and addresses
+				compressed = Default_gen_compressed;
+			}
+		}
+		if(p.length==1){
+			if(p[0] == 'compressed'){
+					compressed = true;
+					PUBLIC_KEY_VERSION = Default_PUBLIC_KEY_VERSION;
+					PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+			}
+			else if(p[0] == 'uncompressed'){
+				compressed = false;
+				PUBLIC_KEY_VERSION = parseInt(p[1]);
+				PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+			}
+			else{//if first specified value is byte, then it public key version
+				compressed = Default_gen_compressed;
+				PUBLIC_KEY_VERSION = parseInt(p[0]);
+				PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+			}
+		}else if(p.length==2){
+			if(p[0] == 'compressed'){
+					compressed = true;
+					PUBLIC_KEY_VERSION = parseInt(p[1]);
+					PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+			}
+			else if(p[0] == 'uncompressed'){
+				compressed = false;
+				PUBLIC_KEY_VERSION = parseInt(p[1]);
+				PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;
+			}
+			else{//uncompressed as default format for private keys and addresses
+				compressed = Default_gen_compressed;
+				PUBLIC_KEY_VERSION = parseInt(p[0]);
+				PRIVATE_KEY_VERSION = parseInt(p[1]);
+			}
+		}else if(p.length==3){
+			PUBLIC_KEY_VERSION = parseInt(p[1]);
+			PRIVATE_KEY_VERSION = parseInt(p[2]);
+		}
+		else{
+			PUBLIC_KEY_VERSION = Default_PUBLIC_KEY_VERSION;		//default bitcoin public key version
+			PRIVATE_KEY_VERSION = Default_PRIVATE_KEY_VERSION;		//default bitcoin private key version
+		}
+		//for private key there was been an another formula:
+		//PRIVATE_KEY_VERSION = p.length>1 ? parseInt(p[2]) : ((PUBLIC_KEY_VERSION+128) & 255);
 
+		ADDRESS_URL_PREFIX = $(this).attr('href');
+		//if(ADDRESS_URL_PREFIX==""){ADDRESS_URL_PREFIX==Default_PRIVATE_KEY_VERSION;} //not working
+	  
       var name = $(this).text();
       var child = $(this).children();
       if (child.length)
         name = child.text();
 
-      $('#crName').text(name);
-
+		ticker = $(this).find('span').text();
+		coin_name = $(this).text().split(ticker)[1];
+		$('#coin_name').attr('ticker', ticker);
+		$('#coin_name').attr('coin_name', coin_name);
+		
+		//console.log(
+		//	'p[0]', p[0], 'p[1]', p[1], 'p[2]', p[2],
+		//	'\n compressed', compressed, 'PUBLIC_KEY_VERSION', PUBLIC_KEY_VERSION, 'PRIVATE_KEY_VERSION', PRIVATE_KEY_VERSION
+		//);
+		
+      $('#crName').text(name);	  
       $('#crSelect').dropdown('toggle');
-      gen_update();
+      //gen_update();
       translate();
+		
+	  	//compressed=null;
+		gen_compressed=compressed;
+		
+		//compressed=true;	//test
+		//compressed=false;
+		//compressed=null;
+		if(compressed===true){
+			$('#gen_comp label input').off();
+			$('#gen_comp [name=comp]').addClass('active');
+			$('#gen_comp [name=uncomp]').removeClass('active');
+		}
+		else{
+			if(compressed===false){
+				$('#gen_comp label input').off();
+				$('#gen_comp [name=uncomp]').addClass('active');
+				$('#gen_comp [name=comp]').removeClass('active');
+			}
+			else{
+				$('#gen_comp label input').off();
+				$('#gen_comp [name=uncomp]').addClass('active');
+				$('#gen_comp [name=comp]').removeClass('active');
+			}
+		}
+/*
+index.html
+              <div class="form-group">
+                <label class="col-lg-2 control-label">Point Conversion</label>
+                <div class="col-lg-10 controls">
+                  <div class="btn-group" data-toggle="buttons" id="gen_comp">
+                    <label class="btn btn-default" name="uncomp" title="Uncompressed keys (reference client)">
+					<input name="uncompressed" type="radio" />Uncompressed</label>
+					<label class="btn btn-default" name="comp" title="Compressed keys (introduced in 0.5.99)">
+					<input name="compressed" type="radio" />Compressed</label>
+                  </div>
+                </div>
+              </div>
+*/
+		setCompressed(compressed);
+		//gen_update();
+		chOnRandom();
 
-      updateAddr($('#sgSec'), $('#sgAddr'));
-      updateAddr($('#txSec'), $('#txAddr'));
-
+		var segwit_addr = $(this).attr('title');
+		setSegwitAddr(segwit_addr);
+		
       return false;
     }
 
@@ -1580,9 +2157,11 @@
         $('#tab-converter').on('shown.bs.tab', function() { $('#src').focus(); });
         $('#tab-sign').on('shown.bs.tab', function() { $('#sgSec').focus(); });
         $('#tab-verify').on('shown.bs.tab', function() { $('#vrMsg').focus(); });
+		$('#tab-xor').on('shown.bs.tab', function() { $('#xor').focus(); });
+		$('#tab-t_addr').on('shown.bs.tab', function() { $('#taddr').focus(); });
 
         // generator
-
+		
         onInput('#pass', onChangePass);
         onInput('#hash', onChangeHash);
         onInput('#sec', genOnChangePrivKey);
@@ -1592,6 +2171,7 @@
 
         $('#gen_from label input').on('change', genUpdateFrom );
         $('#gen_comp label input').on('change', genOnChangeCompressed);
+		
 
         genRandomPass();
 
@@ -1646,6 +2226,7 @@
         // sign
 
         $('#sgSec').val($('#sec').val());
+		
         $('#sgAddr').val($('#addr').val());
         $('#sgMsg').val("This is an example of a signed message.");
 
@@ -1691,9 +2272,14 @@
         });
 
         onInput($('#vrAddr'), vrOnChange);
-        onInput($('#vrMsg'), vrOnChange);
-        onInput($('#vrSig'), vrOnChange);
-
+        
+		onInput($('#vrMsg'), vrOnChange);
+		$("#vrMsg").on('mouseenter', vrOnChange);	//verify if mouse enter
+		$("#vrMsg").on('click', vrOnChange);		//verify if user clicking by textarea
+        $("#vrMsg").on("focusin", vrOnChange);		//verify if focus in this textarea, without mouse
+		
+		onInput($('#vrSig'), vrOnChange);
+		
         // permalink support
         if ( window.location.hash && window.location.hash.indexOf('?')!=-1 ) {
           var args = window.location.hash.split('?')[1].split('&');
@@ -1712,14 +2298,203 @@
 
         $('#crCurrency ul li a').on('click', crChange);
 
+
         // init secure random
         try {
           var r = secureRandom(32);
-          $('#genRandom').attr('disabled', false);
+          $('#genRandom').attr('enabled', false);
           $('#chRandom').attr('disabled', false);
         } catch (err) {
           console.log ('secureRandom is not supported');
         }
 
+        $('#toggleKeyCode').on('click', function() {
+            $('#genKeyQR').slideToggle();
+            $('#sec').closest('.form-group').slideToggle();
+			
+			var toogled = $('#toggleKeyCode').attr('toogled');
+            toogled = (toogled === 'true' ? 'false' : 'true');
+            $('#toggleKeyCode').attr('toogled', toogled);
+			
+			var text = (toogled === 'true' ? 'Hide private key': 'Show private key');
+            $('#toggleKeyCode').html(text);
+        });
+
+        $('#togglePass').on('click', function(){
+            var type = $('#pass').attr('type');
+            type = (type === 'text' ? 'password' : 'text');
+            $('#pass').attr('type', type);
+			
+			var text = (type === 'text' ? 'PASS' : 'TEXT');
+            $('#togglePass').html(text);
+        });
+		
+		$('#toggleKeyfiledata').on('click', function(){
+            var type = $('#keyfiledata').attr('type');
+            type = (type === 'text' ? 'password' : 'text');
+            $('#keyfiledata').attr('type', type);
+			
+			var text = (type === 'text' ? 'PASS' : 'TEXT');
+            $('#toggleKeyfiledata').html(text);
+ 
+        });
+		
+		
+		if(random_seed==false){
+			$('#hash_random_seed_form').hide();
+			$('#hash_random_seed').hide();
+			$('#XOR').hide();
+			
+			$('#chain_hash_of_random_seed').hide();			
+			$('#chhash_random_seed').hide();			
+			$('#chXOR').hide();
+		}
+		
+		$('#XOR').on('click', function(){
+				var XOR = $('#hash').attr('XOR');
+				XOR = (XOR === 'true' ? 'false' : 'true');
+				$('#hash').attr('XOR', XOR);
+				//attribute can be checked in the source code of html page
+				
+				$('#hash').val(XOR_hex($('#hash').val(),$('#hash_random_seed').val()));
+				var text = (XOR === 'true' ? 'unXOR' : 'XOR');
+				$('#XOR').text(text);
+		
+				gen_update_sec_exp();
+        });
+		$('#chXOR').on('click', function(){
+
+			$('#chRoot').val(XOR_hex($('#chRoot').val(),$('#chhash_random_seed').val()));
+			$('#chCode').val(XOR_hex($('#chCode').val(),$('#chhash_random_seed').val()));
+			root_key = Crypto.util.hexToBytes($('#chRoot').val());
+			chaincode = Crypto.util.hexToBytes($('#chCode').val())
+				
+			if (chType == 'armory'){
+				$('#chBackup').val(armory_encode_keys(root_key, chaincode).split('\n').slice(0,4).join('\n'));
+			}
+			if (chType == 'electrum'){
+				var seed = $('#chRoot').val();
+				$('#chBackup').val(mn_encode(seed));
+			}
+			chUpdateBackup();
+        });
+		
+		
+		$('#xorRand').on('click', function(){
+			var a = secureRandom(32);
+			var b = secureRandom(32);
+			$('#a').val(Crypto.util.bytesToHex(a));
+			$('#b').val(Crypto.util.bytesToHex(b));
+        });
+		
+		$('#xorXOR').on('click', function(){
+			$('#c').val(XOR_hex($('#a').val(),$('#b').val()));
+        });	
+        
+		$('#SegWit_address').on('click', function(){
+				var type = $('#addr').attr('SegWit_address');
+				//SegWit_address = (SegWit_address === "SegWit address" ? "Default address" : "SegWit address");
+				switch (type) {
+					case "SegWit address": type = "ZCash t-address"; break;
+					case "ZCash t-address": type = "Default address"; break;
+					case "Default address": type = "SegWit address"; break;
+					default: type = "SegWit address";
+				}//	console.log(SegWit_address);		
+			
+				$('#addr').attr('SegWit_address', type);
+				$('#SegWit_address').text(type);
+
+				setSegwitAddr(type);
+        });
+		
     });
 })(jQuery);
+
+
+//JS functions, not JQuery
+//function to download text as file.
+var as_text = false; //default download as binary data.
+function download(filename, text) {
+	console.log(text);
+	var element = document.createElement('a');
+		var hex = text, // = "375771", // ASCII HEX: 37="7", 57="W", 71="q"
+		bytes = [],
+		str;
+		
+	for(var i=0; i< hex.length-1; i+=2){
+		bytes.push(parseInt(hex.substr(i, 2), 16));
+	}
+	
+	var sampleBytes = new Uint8Array(bytes);
+	var saveByteArray = (function () {
+		var a = document.createElement("a");
+		document.body.appendChild(a);
+		a.style = "display: none";
+		return function (data, name) {
+			console.log('as_text: '+as_text);
+			if(as_text){
+				var blob = new Blob([hex], {type: "text/plain"});
+				console.log('text: ', blob);
+			} else{
+				var blob = new Blob(data, {type: "application/octet-stream"});
+				console.log('data: ', blob);
+			}
+			var url = window.URL.createObjectURL(blob);
+			a.href = url;
+			console.log('url', url);
+			a.download = name;
+			a.click();
+			window.URL.revokeObjectURL(url);
+		};
+	}());
+		saveByteArray([sampleBytes], filename);
+}
+
+function download_as_binary(src){
+	download(filename, src)
+}
+
+//Load the textareas from the text files.
+var openFile = function(event, id, as_base64) {
+	var input = event.target;
+		var reader = new FileReader();
+		reader.onload = function(){
+			var text = reader.result;
+			var node = document.getElementById(id);
+			if(as_base64='as_base64'){
+				node.value = text.split(';base64,')[1];
+			}
+			else{
+				node.value = text;
+			}//console.log(reader.result.substring(0, 200));
+		};
+		if(as_base64='as_base64'){
+			reader.readAsDataURL(input.files[0]);
+		}else{
+			reader.readAsText(input.files[0]);
+		}
+};
+	  
+//function to generate download links for buttons.
+function updateLink(input, link) {
+  link.hidden = !input.value;
+  //if($('#enc_to [id="to_text"]').hasClass('active')){	//хочу что сохранялись байты а не утф.
+  
+  link.href = "data:text/plain;charset=UTF-8," + encodeURI(input.value); //<-- data in href, as UTF-8 text.
+  link.onclick = '';
+  link.style.display = (input.value==='') ? 'none' : 'block';
+}
+
+//funtion to show and hide download link (button) for empty or filled readonly textarea's
+function linkText(input, link, fileName) { //IDs and filename
+  link.style.display = 'none' ? 'block': 'block';
+  updateLink(input, link)
+  link.download = fileName;
+  
+  function onInput() {
+    updateLink(input, link);
+  }
+  
+  input.addEventListener("input", onInput);
+  return onInput;
+}

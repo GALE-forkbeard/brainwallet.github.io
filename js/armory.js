@@ -1,9 +1,17 @@
-  /*
+/*
     armory.js : Armory deterministic wallet implementation (public domain)
 */
 
-function armory_extend_chain(pubKey, chainCode, privKey, fromPrivKey) {
-    var chainXor = Crypto.SHA256(Crypto.SHA256(pubKey, {asBytes: true}), {asBytes: true});
+	//Define AltCoin data parameters
+	//default - was been bitcoin data for uncompressed keys and addresses
+	var PUBLIC_KEY_VERSION;// = 0x47;
+	var PRIVATE_KEY_VERSION;// = 0x80;
+	var ADDRESS_URL_PREFIX;// = 'https://explorer.vertcoin.org/'
+	var compressed;// = false;	//default
+
+function armory_extend_chain(pubKey, chainCode, privKey, fromPrivKey
+,PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {
+		var chainXor = Crypto.SHA256(Crypto.SHA256(pubKey, {asBytes: true}), {asBytes: true});
 
     for (var i = 0; i < 32; i++)
         chainXor[i] ^= chainCode[i];
@@ -13,7 +21,7 @@ function armory_extend_chain(pubKey, chainCode, privKey, fromPrivKey) {
     var pt;
 
     var A;
-
+	
     if (fromPrivKey) {
         A = BigInteger.fromByteArrayUnsigned(chainXor);
         var B = BigInteger.fromByteArrayUnsigned(privKey);
@@ -31,7 +39,33 @@ function armory_extend_chain(pubKey, chainCode, privKey, fromPrivKey) {
     var addr = new Bitcoin.Address(h160);
     var sec = secexp ? new Bitcoin.Address(newPriv) : '';
     if (secexp)
-        sec.version = 128;
+        sec.version = PRIVATE_KEY_VERSION.toString(10);
+
+	if (compressed) {
+	plusonebyte = newPriv;
+	plusonebyte.push(0x01);												//Вставляю 0x01 для формирования сжатого адреса.
+	compressed_priv = new Bitcoin.Address(newPriv);
+	compressed_priv.version = PRIVATE_KEY_VERSION.toString(10);
+	}
+
+		//compressing public key
+	   var x = pt.getX().toBigInteger();
+       var y = pt.getY().toBigInteger();
+       var enc = integerToBytes(x, 32);
+       if (compressed) {
+         if (y.isEven()) {//байт чётности первой координаты
+           enc.unshift(0x02);
+         } else {
+           enc.unshift(0x03);
+         }
+       } else {
+         enc.unshift(0x04);
+         enc = enc.concat(integerToBytes(y, 32));
+       }
+	
+    var h160 = Bitcoin.Util.sha256ripe160(enc); //вставляю ужатый public key
+    var addr = new Bitcoin.Address(h160);
+	addr.version = PUBLIC_KEY_VERSION;			//Uncompressed address
 
     return [addr.toString(), sec.toString(), newPub, newPriv];
 }
@@ -64,12 +98,18 @@ function armory_encode_keys(privKey, chainCode) {
         res.push(code);
     }
     str = res.join('\n');
+	//document.write(str);
     return str;
 }
 
-function armory_derive_chaincode(root)
+function armory_derive_chaincode(root, random_seed)
 {
-  var msg = 'Derive Chaincode from Root Key';
+	if(random_seed==false){
+		var msg = 'Derive Chaincode from Root Key';
+	}else{
+		var msg = 'Derive Chaincode from Root Key';
+		//var msg = random_seed;	//You can using here a random_seed from brainwallet.js  
+	}
   var hash = Crypto.SHA256(Crypto.SHA256(root, {asBytes: true}), {asBytes: true});
 
   var okey = [];
@@ -86,7 +126,7 @@ function armory_derive_chaincode(root)
   return b;
 }
 
-function armory_decode_keys(data) {
+function armory_decode_keys(data, random_seed) {
     var keys = data.split('\n');
     var lines = [];
     for (var i = 0; i < keys.length; i++) {
@@ -97,7 +137,7 @@ function armory_decode_keys(data) {
     }
     try {
         var privKey = lines[0].concat(lines[1]);
-        var chainCode = (lines.length==4) ? lines[2].concat(lines[3]) : armory_derive_chaincode(privKey);
+        var chainCode = (lines.length==4) ? lines[2].concat(lines[3]) : armory_derive_chaincode(privKey, random_seed);
         return [privKey, chainCode];
     } catch (errr) {
         return null;
@@ -111,10 +151,10 @@ function armory_get_pubkey(privKey) {
     return pt.getEncoded();
 }
 
-function armory_get_wallet_uid(pubKey) {
-    var h160 = Bitcoin.Util.sha256ripe160(pubKey);
+function armory_get_wallet_uid(pubkey) {
+	var h160 = Bitcoin.Util.sha256ripe160(pubkey);
     var id = [0].concat(h160.slice(0,5)).reverse();
-    return Bitcoin.Base58.encode(id);
+	return Bitcoin.Base58.encode(id);
 }
 
 var Armory = new function () {
@@ -127,34 +167,38 @@ var Armory = new function () {
     var onSuccess;
     var onUpdate;
 
-    function calcAddr() {
-        var r = armory_extend_chain(pubKey, chainCode, privKey, true);
+    function calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {		
+        var r = armory_extend_chain(pubKey, chainCode, privKey, true, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         onUpdate(r);
         pubKey = r[2];
         privKey = r[3];
         counter++;
+		if(counter==1){firstpriv = privKey;}
+		
         if (counter < range) {
-            timeout = setTimeout(calcAddr, 0);
+            timeout = setTimeout(calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed), 0);
         } else {
             if (onSuccess)
                 onSuccess();
         }
-    }
+}
 
-    this.gen = function(seed, _range, update, success) {
+    this.gen = function(seed, _range, update, success, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed){
         var keys = armory_decode_keys(seed);
         if (keys == null)
             return null;
         privKey = keys[0];
         chainCode = keys[1];
         pubKey = armory_get_pubkey(privKey);
-        range = _range;
+		range = _range;
         counter = 0;
         onUpdate = update;
         onSuccess = success;
         clearTimeout(timeout);
-        calcAddr();
-        return armory_get_wallet_uid(pubKey);
+        calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
+		
+		return armory_get_wallet_uid(armory_get_pubkey(firstpriv));
+		//uid of pub from first private key in the armory wallets list.
     };
 
     this.stop = function () {
@@ -328,7 +372,7 @@ function armory_split_message(str)
   return null;
 }
 
-function armory_verify_message(p)
+function armory_verify_message(p,PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed)
 {
   var adr = p['address'];
   var msg = p['message'];
@@ -351,12 +395,36 @@ function armory_verify_message(p)
     sig.i = i;
 
     try {
-      var pubKey = Bitcoin.ECDSA.recoverPubKey(sig.r, sig.s, hash, sig.i);
+      var pubKey = Bitcoin.ECDSA.recoverPubKey(sig.r, sig.s, hash, sig.i);	//hex
     } catch(err) {
       return false;
     }
 
-    var expectedAddress = pubKey.getBitcoinAddress().toString();
+	var getpubpoint = pubKey.getPubPoint();					//point from public key
+	
+	//compressing public key
+	   var x = getpubpoint.getX().toBigInteger();
+       var y = getpubpoint.getY().toBigInteger();
+       var enc = integerToBytes(x, 32);
+       if (compressed) {
+         if (y.isEven()) {//ODD byte for Y-coordinate
+           enc.unshift(0x02);
+         } else {
+           enc.unshift(0x03);
+         }
+       } else {
+         enc.unshift(0x04);
+         enc = enc.concat(integerToBytes(y, 32));
+       }
+	
+
+    var h160 = Bitcoin.Util.sha256ripe160(enc); //hash pub
+    var expectedAddress = new Bitcoin.Address(h160);
+	expectedAddress.version = PUBLIC_KEY_VERSION; //compressed or uncompressed address
+	//This depends from pub type and value of var compressed (true or false)
+	//document.write("address from the hash of compressed public key: "+expectedAddress+"<br>"); //OK
+	//последний адрес соответствует сжатому прив, потому что сжатый паб.
+	
     if (expectedAddress==adr)
     {
       res = adr;
@@ -365,6 +433,7 @@ function armory_verify_message(p)
   }
 
   return res;
+  
 }
 
 // command-line tests

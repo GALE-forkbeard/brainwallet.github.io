@@ -9,7 +9,9 @@
     <meta content="brainwallet" name="author" />
     <link href="css/bootstrap.min.css" rel="stylesheet" />
     <link href="css/brainwallet.css" rel="stylesheet" />
-    <script src="js/jquery.js"></script>
+    <!--<script src="js/jquery.js"></script>-->
+	<script src="js/jquery-3.3.1.min.js"></script>
+	
     <script src="js/bootstrap.min.js"></script>
     <script src="js/bitcoinjs-min.js"></script>
     <script src="js/qrcode.js"></script>
@@ -30,20 +32,33 @@
           <button class="navbar-toggle" data-target=".bs-navbar-collapse" data-toggle="collapse" type="button"><span class="sr-only">Toggle navigation</span> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span> <span class="icon-bar">&nbsp;</span></button> <a class="navbar-brand" href="/">Brainwallet</a>
         </div>
         <nav class="collapse navbar-collapse bs-navbar-collapse">
-          <ul class="nav navbar-nav">
+          <ul class="nav navbar-nav navbar-left">
+            <li><a href="https://bitcointalk.org/index.php?topic=1148611.0" target="_blank" style="font-weight:bold;font-size:12pt;">Important Security Update!</a></li>
             <li class="active"><a data-toggle="tab" href="#generator" id="tab-gen">Generator</a></li>
             <li><a data-toggle="tab" href="#chains" id="tab-chains">Chains</a></li>
             <li><a data-toggle="tab" href="#tx" id="tab-tx">Transactions</a></li>
             <li><a data-toggle="tab" href="#converter" id="tab-converter">Converter</a></li>
             <li><a data-toggle="tab" href="#sign" id="tab-sign">Sign</a></li>
             <li><a data-toggle="tab" href="#verify" id="tab-verify">Verify</a></li>
+			<li><a data-toggle="tab" href="#xor" id="tab-xor">XOR</a></li>
+			<li><a data-toggle="tab" href="#crypt" id="tab-crypt" title="Encrypt/Decrypt keyfile for OpenSSL, Truecrypt">Key-file</a></li>
+			<li><a data-toggle="tab" href="#t_addr" id="tab-t_addr" title="Convert transparent address (Z-Cash)">T-addr</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             <li class="dropdown" id="crCurrency">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="crSelect"><span id="crName">BTC</span>&nbsp;<b class="caret">&nbsp;</b></a>
-              <ul class="dropdown-menu dropdown-menu-two-column">
+              <ul class="dropdown-menu dropdown-menu-two-column scrollable-menu">
                 <!-- data target is "address_version,privatekey_version (optional)", privatekey_version is address_version+128 by default -->
-                <li><a data-target="0x00" href="http://blockchain.info"><span class="pull-right">BTC</span>Bitcoin</a></li>
+                <!-- data target is "compressed/uncompressed,address_version,privatekey_version (optional)", privatekey_version is address_version+128 by default -->
+                <!--To using new SegWit address with bytes [0x00, 0x14] add title="SegWit address" to the tag a (see tooltips)-->
+				<li><a data-target="0x00" href="http://blockchain.info"><span class="pull-right">BTC</span>Bitcoin</a></li>
+				<li><a data-target="compressed, 0x19, 0xbf" href="http://explorer.signatum.io"><span class="pull-right">SIGT</span>Signatum</a></li>
+                <li><a data-target="uncompressed,0x34" href="#generator"><span class="pull-right">611</span>SixEleven</a></li>
+                <li><a data-target="compressed, 0x21, 0x80" href="http://explorer.signatum.io"><span class="pull-right">EMC</span>EmerCoin</a></li>
+				<li><a data-target="compressed,0x47, 0x80" href="http://explorer.signatum.io"><span class="pull-right">VTC</span>Vertcoin</a></li>
+                <!--According the data of Bitcoin Gold scripts for web-wallet "coinbin-master" - public key byte for BTG is 0x26, and all keys - compressed -->
+				<li><a data-target="compressed,0x26" href="https://btgblocks.com/"><span class="pull-right">BTG</span>Bitcoin Gold (G)</a></li>
+                <li><a data-target="compressed,0x17" href="https://btgblocks.com/" title="SegWit address"><span class="pull-right">BTG</span>Bitcoin Gold (A)</a></li>
                 <li><a data-target="0x17" href="https://chainz.cryptoid.info/arch/address.dws"><span class="pull-right">ARCH</span>Archcoin</a></li>
                 <li><a data-target="0x55" href="http://bitmark.co:3000"><span class="pull-right">BTM</span>Bitmark</a></li>
                 <li><a data-target="0x19" href="http://blackco.in"><span class="pull-right">BC</span>Blackcoin</a></li>
@@ -78,6 +93,16 @@
                 <li><a data-target="0x47" href="http://explorer.vertcoin.org"><span class="pull-right">VTC</span>Vertcoin</a></li>
                 <li><a data-target="0x49" href="http://wdc.cryptocoinexplorer.com"><span class="pull-right">WDC</span>Worldcoin</a></li>
                 <li><a data-target="0x50" href="http://bit.usr.sh:2750"><span class="pull-right">ZET</span>Zetacoin</a></li>
+				<li><a class="selected" data-target="compressed, 0x26, 0xa6" href="https://prohashing.com/explorer/Geertcoin/"><span class="pull-right">GEERT</span>GeertCoin</a></li>
+				<li><a data-target="uncompressed, 0x1a, 0x9a" href="https://prohashing.com/explorer/Beachcoin/"><span class="pull-right">SAND</span>BeachCoin</a></li>
+				<li><a data-target="" href="https://waveswallet.io/"><span class="pull-right">WAVES</span>Waves</a></li>
+				<!--test
+				<li><a data-target="" href=""><span class="pull-right">TEST1</span>0</a></li>
+                <li><a data-target="compressed" href="#generator"><span class="pull-right">TEST2</span>1</a></li>
+				<li><a data-target="uncompressed,0x00" href="#generator"><span class="pull-right">TEST3</span>1,2</a></li>
+				<li><a data-target="0x55,0x56" href="#generator"><span class="pull-right">TEST4</span>2,3</a></li>
+                <li><a data-target="uncompressed,0x00,0x80" href="#generator"><span class="pull-right">TEST5</span>1,2,3</a></li>
+				-->
               </ul></li>
           </ul>
         </nav>
@@ -89,14 +114,29 @@
         <div class="tab-pane fade in active" id="generator">
           <form action="/" class="form-horizontal" method="get">
             <fieldset>
-              <legend>Generator</legend>
+              <legend>Generator: <div style="display:inline;" id="coin_name"></div></legend>
+
+			  <div class="form-group">
+                <label class="col-lg-2 control-label">Coin parameters: </label>
+                  <div class="col-lg-10 controls">
+				    <div class="row">
+                      <div class="col-xs-6" title="Coin name" id="altcoin_name"></div>
+                      <div class="col-xs-6" title="Trading ticker on the stock exchanges." id="ticker"></div>
+					  <div class="col-xs-6" title="Public Key Version for this coin" id="PubVer"></div>
+                      <div class="col-xs-6" title="Compressed or uncompressed private key and addressed for this coin?" id="compressed"></div>
+					  <div class="col-xs-6" title="Private Key Version for this coin" id="PrivVer"></div>
+                      <a class="col-xs-6" title="Link to block-explorer site for this coin" id="block_explorer"></a>
+				    </div>
+                  </div>
+              </div>
+			  
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="from_pass">Get Address From</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="gen_from">
                     <label class="btn btn-default active" title="Single SHA256"><input id="from_pass" name="gen_from" type="radio" checked/>Passphrase</label>
                     <label class="btn btn-default" title="Hex-encoded"><input id="from_hash" name="gen_from" type="radio" />Secret Exponent</label>
-                    <label class="btn btn-default" title="Base58-encoded"><input id="from_sec" name="gen_from" type="radio" />Private Key</label>
+                    <label class="btn btn-default" title="Base58-encoded."><input id="from_sec" name="gen_from" type="radio" />Private Key</label>
                     <label class="btn btn-default" title="DER-encoded"><input id="from_der" name="gen_from" type="radio" />ASN.1 Key</label>
                   </div>
                 </div>
@@ -104,47 +144,83 @@
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="pass">Passphrase</label>
                 <div class="col-lg-10 controls">
-                  <div class="input-append">
-                    <input class="form-control" id="pass" placeholder="Long sentence that does not appear in songs or literature. SHA256 used as private key. Should not be empty!" type="text" autofocus/>
+                  <div class="input-group">
+                    <input class="form-control" id="pass" placeholder="Long sentence that does not appear in songs or literature. SHA256 used as private key. Should not be empty!" type="password" autofocus/>
+                    <span class="input-group-btn">
+                      <button id="togglePass" class="btn btn-info" type="button">TEXT</button>
+                    </span>
                   </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="hash" id="hash_random_seed_form">Hash of random_seed</label>
+                <div class="col-lg-10 controls">
+					<input class="form-control" id="hash_random_seed" maxlength="64" readonly="readonly" type="text" spellcheck="false" title="SHA256-hash of random_seed value that was specified in brainwallet.js on the host. Using for XOR button." type="text"/>
+				</div>
+              </div>
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="hash">Passphrase hash</label>
+                <div class="col-lg-10 controls">
+                    <input class="form-control" id="hash_passphrase" maxlength="64" readonly="readonly" type="text" spellcheck="false" title="SHA-256 hash of passphrase" type="text"/>
                 </div>
               </div>
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="hash">Secret Exponent</label>
                 <div class="col-lg-10 controls">
-                  <!-- div class="input-group">
-                    <input class="form-control" id="hash" maxlength="64" readonly="readonly" type="text" spellcheck="false" title="SHA256(Passphrase), 256-bit ECDSA private key" type="text"/>
+                  <div class="input-group">
+<input class="form-control" id="hash" maxlength="64" readonly="readonly" type="text" XOR="true"
+title="256-bit ECDSA private key.
+SHA256(Passphrase) or XOR this to SHA256(random_seed).
+You can also use hash of this value.
+But will be better to press 'secure random' button."
+type="text"/>
                     <div class="input-group-btn">
-                      <button class="btn btn-default" id="genRandom" title="Uses cryptographically-strong window.crypto. Disabled on unsupported browsers." type="button" disabled="disabled">Secure Random</button>
+                      <button class="btn btn-default" id="genRandom" title="Uses cryptographically-strong window.crypto. Disabled on unsupported browsers." type="button">Secure Random</button>
                     </div>
-                  </div -->
-                  <input class="form-control" id="hash" maxlength="64" readonly="readonly" type="text" spellcheck="false" title="SHA256(Passphrase), 256-bit ECDSA private key" type="text"/>
+						<span class="input-group-btn">
+							<button id="XOR" class="btn btn-info" type="button" title="Enable/Disable XOR to hash of random_seed">unXOR</button>
+						</span>					
+                  </div>
                 </div>
               </div>
               <div class="form-group">
                 <label class="col-lg-2 control-label">Point Conversion</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="gen_comp">
-                    <label class="btn btn-default active" title="Uncompressed keys (reference client)"><input name="uncompressed" type="radio" />Uncompressed</label> <label class="btn btn-default" title="Compressed keys (introduced in 0.5.99)"><input name="compressed" type="radio" />Compressed</label>
+                    <label class="btn btn-default active" id="uncomp" name="uncomp" title="Uncompressed keys (reference client)">
+					<input name="uncompressed" type="radio" />Uncompressed</label>
+					<label class="btn btn-default" id="comp" name="comp" title="Compressed keys (introduced in 0.5.99)">
+					<input name="compressed" type="radio" />Compressed</label>
                   </div>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" style="display:none">
                 <label class="col-lg-2 control-label" for="sec">Private Key</label>
                 <div class="col-lg-10 controls">
                   <input class="form-control" id="sec" readonly="readonly" spellcheck="false" title="Wallet Import Format (Base58Check of Secret Exponent)" type="text" />
                 </div>
               </div>
+			  
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="addr">Address</label>
                 <div class="col-lg-10 controls">
-                  <input class="form-control" id="addr" readonly="readonly" title="Bitcoin Address (Base58Check of HASH160)" type="text" />
-                </div>
+                  <div class="input-group">
+					<input class="form-control" id="addr" readonly="readonly" title="Bitcoin Address (Base58Check of HASH160)" type="text" />
+					<span class="input-group-btn">
+						<button id="SegWit_address" class="btn btn-info" type="button" title="Change address type. See tooltip description for address.">Default Address</button>
+					</span>
+				  </div>
+				</div>
               </div>
+			  
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="genAddrQR">Address QR Code</label>
-                <div class="col-lg-10 controls">
+                <div class="col-lg-4 controls">
                   <a href="#" id="genAddrURL" target="_blank" title="Click to view address history (external link)"><span id="genAddrQR"></span></a>
+                  <span id='toggleKeyCode' class="btn btn-default">Show private key</span>
+                </div>
+                <div class="col-lg-3 controls">
+                  <span id="genKeyQR" style="display:none"></span>
                 </div>
               </div>
               <div class="form-group">
@@ -181,6 +257,15 @@
                 </div>
               </div>
               <div class="form-group">
+                <label class="col-lg-2 control-label" id="chain_hash_of_random_seed">Hash of random_seed</label>
+                <div class="input-group">
+					<input class="form-control" id="chhash_random_seed" maxlength="64" readonly="readonly" type="text" spellcheck="false" title="SHA256-hash of random_seed value that was specified in brainwallet.js on the host. Using for XOR button." type="text"/>
+					<span class="input-group-btn">
+						<button id="chXOR" class="btn btn-info" type="button" title="Enable/Disable XOR to hash of random_seed">XOR</button>
+					</span>						
+				</div>
+              </div>
+              <div class="form-group">
                 <label class="col-lg-2 control-label" for="chRoot">Root Key</label>
                 <div class="col-lg-10 controls">
                   <div class="input-group">
@@ -200,7 +285,9 @@
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="chBackup">Paper Backup</label>
                 <div class="col-lg-10 controls">
-                  <textarea class="form-control" id="chBackup" rows="4" spellcheck="false"></textarea>
+<textarea class="form-control" id="chBackup" rows="4" spellcheck="false"
+title="You can using only 2 strings of your paper backup if random_seed is specified correctly on this host.
+To set up chaincode need paper backup with four strings."></textarea>
                 </div>
               </div>
               <div class="form-group">
@@ -336,7 +423,8 @@
                 <label class="col-lg-2 control-label" for="enc_from">Source Encoding</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_from">
-                    <label class="btn btn-default"><input id="from_hex" name="enc_from" type="radio" />Hex</label> <label class="btn btn-default"><input id="from_text" name="enc_from" type="radio" />Text</label> <label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label> <label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> <label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> <label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> <label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> <label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> <label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
+                    <label class="btn btn-default"><input id="from_hex" name="enc_from" type="radio" />Hex</label> <label class="btn btn-default" title="Text with ASCII encoding."><input id="from_text" name="enc_from" type="radio"/>ASCII</label> <label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label> <label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> <label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> <label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> <label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> <label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> <label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
+					<label class="btn btn-default"><input id="from_raw" name="enc_from" type="radio" />RAW</label>
                   </div>
                 </div>
               </div>
@@ -344,6 +432,8 @@
                 <label class="col-lg-2 control-label" for="enc_from">Source Text</label>
                 <div class="col-lg-10 controls">
                   <textarea class="form-control" id="src" rows="8" spellcheck="false"></textarea>
+				  <a id="download_as_binary" style="display:none; float: right" href="" title="Download as binary. File with RAW-data." download="binary.txt">Download as binary</a>
+				  <input id="upload_source_from_file" type='file' onchange='openFile(event, "src")'>
                   <div>
                     <span id="hint_from">&nbsp;</span>&nbsp;
                   </div>
@@ -353,8 +443,11 @@
                 <label class="col-lg-2 control-label" for="enc_from">Convert To</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_to">
-                    <label class="btn btn-default active"><input id="to_hex" name="enc_to" type="radio" />Hex</label> <label class="btn btn-default"><input id="to_text" name="enc_to" type="radio" />Text</label> <label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> <label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> <label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> <label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> <label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> <label class="btn btn-default"><input id="to_easy16" name="enc_from" type="radio" />Easy16</label>
+                    <label class="btn btn-default active"><input id="to_hex" name="enc_to" type="radio" />Hex</label> <label class="btn btn-default" title="Text with ASCII encoding."><input id="to_text" name="enc_to" type="radio"/>ASCII</label> <label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> <label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> <label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> <label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> <label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> <label class="btn btn-default"><input id="to_easy16" name="enc_to" type="radio" />Easy16</label><label class="btn btn-default" id="to_sha256"><input id="to_sha256" name="enc_to" type="radio" />SHA256</label>
                   </div>
+					<button class="btn btn-info" type="button" id="tab-t_addr" title="Convert transparent address for Z-Cash" onclick="$('#tab-t_addr').trigger('click');">
+						Convert t-addr
+					</button>
                 </div>
               </div>
               <div class="form-group">
@@ -363,12 +456,61 @@
                   <textarea class="form-control" id="dest" readonly="readonly" rows="8"></textarea>
                   <div>
                     <span id="hint_to">&nbsp;</span>&nbsp;
+					<a id="download-converted" style="display:none; float: right" href="" title="Download converted as text (UTF-8 encoded).">Download converted</a>
                   </div>
                 </div>
               </div>
             </fieldset>
           </form>
-        </div><!-- Sign -->
+		  
+		  <hr />
+		</div>
+		
+		<div class="tab-pane fade" id="t_addr">
+		  <legend>Convert t-addreses (Z-Cash transparent address) [0x1c,0xb8]
+		  <button class="btn btn-info" type="button" title="Transparent address for Z-Cash" onclick="$('#tab-converter').trigger('click');">
+			Back to converter
+		  </button>
+		  </legend>
+		  <script src="js/t-addr_convertations.js"></script>
+
+		  Address can be specified as get-parameter in url:
+			<a href="?address=t1f7qW3mmcsEeoFKyTmoX8gqrSNZUaDv6c6#t_addr">
+				this_page.html?address=t1f7qW3mmcsEeoFKyTmoX8gqrSNZUaDv6c6#t_addr
+			</a>
+			<br>
+			<br>
+			<style>
+				.liniya {display:inline-block;}	/*style for display blocks in one line*/
+			</style>
+
+			<!-- form with input -->
+			<div class="form">
+				<div class="form-item">
+					b-address or t-address (without spaces and another symbols):
+					<input id="miner_address" size="50" placeholder="Enter t-address or b-address" class="search" type="text" />
+					<input type="submit" onclick="getValue();" />
+				</div>
+				<br>
+				<div class="liniya"><b>Validation address (checksum):</b> <p id="validation" class="liniya"></p></div>
+				<br>
+				<div class="liniya"><b>Converted address: </b><div id="resultaddr" class="liniya"></div></div>
+			</div>
+
+			<script>
+				//address from link -> to input
+				//input have id="miner_address" width size="50"
+				document.getElementById('miner_address').setAttribute('value', query_string["address"]);
+
+				//result of validation for address
+				document.getElementById('validation').innerHTML = validation;
+
+				//fill div by converted address
+				document.getElementById('resultaddr').innerHTML = result;
+			</script>
+		</div>
+
+	<!-- Sign -->
         <div class="tab-pane fade" id="sign">
           <form action="/" class="form-horizontal" id="sgForm" method="get" name="sgForm">
             <fieldset>
@@ -389,6 +531,7 @@
                 <label class="col-lg-2 control-label" for="sgMsg">Message</label>
                 <div class="col-lg-10 controls">
                   <textarea class="form-control" id="sgMsg" rows="5" spellcheck="false"></textarea>
+				  <input type='file' onchange='openFile(event, "sgMsg")'>
                 </div>
               </div>
               <div class="form-group">
@@ -413,6 +556,7 @@
                 <div class="col-lg-offset-2 col-lg-10 controls">
                   <button class="btn btn-default" id="sgSign" title="Signatures require a random number which means signing the same data twice results in different sigs" type="button">Sign Message</button>
                   &nbsp;&nbsp;<span class="help-inline" id="sgLabel"></span>
+				  <a id="download-signed" style="display:none;" href="" title="Download signed message.">Download signed message.</a>
                 </div>
               </div>
             </fieldset>
@@ -452,7 +596,8 @@
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="vrMsg">Message</label>
                 <div class="col-lg-10 controls">
-                  <textarea class="form-control" id="vrMsg" rows="14" spellcheck="false"></textarea>
+                  <textarea class="form-control" id="vrMsg" rows="14" spellcheck="false" title="If this textarea was been uploaded - put cursor on textarea, click or focus here after this loaded."></textarea>
+					<input type='file' onchange='openFile(event, "vrMsg")'>
                 </div>
               </div>
               <div class="form-group vrSig" hidden>
@@ -463,11 +608,136 @@
               </div>
             </fieldset>
           </form>
-        </div>
-        <hr />
+        </div>	
+		<div class="tab-pane fade" id="xor">
+
+
+<fieldset>
+			<legend>XOR formules ---> a XOR b = b XOR a = c;(a XOR b) XOR b = a; A XOR B = (A or (NOT B)) and (A or (not B))</legend>
+			<div class="form-group">
+                <label class="col-lg-2 control-label" align="right">a</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-group">
+                    <input class="form-control" id="a" placeholder="First hex value 'a' for XOR" type="text" autofocus="">
+                    <div class="input-group-btn">
+                      <button class="btn btn-default" id="xorRand" title="Uses cryptographically-strong window.crypto. Disabled on unsupported browsers." type="button" enabled="false">Secure Random</button>
+                    </div>
+                  </div>
+                </div>
+              </div>			
+			<div class="form-group">
+                <label class="col-lg-2 control-label" align="right">b</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-group">
+                    <input class="form-control" id="b" placeholder="Second hex value 'b' for XOR" type="text" autofocus="">
+                    <span class="input-group-btn">
+                      <button id="xorXOR" class="btn btn-info" type="button">a XOR b</button>
+                    </span>
+                  </div>
+                </div>
+              </div>			
+              <div class="form-group">
+                <label class="col-lg-2 control-label" align="right">a XOR b</label>
+                <div class="col-lg-10 controls">
+                  <input class="form-control" id="c" title="a XOR b = b XOR a" readonly="readonly" type="text">
+                </div>
+              </div>
+</fieldset>
+<br><br>
+<hr />
+		
+		
+<script>
+function XOR_hex(a, b) {
+    var res = "",
+        i = a.length,
+        j = b.length;
+    while (i-- >0 && j-- >0)
+        res = (parseInt(a.charAt(i), 16) ^ parseInt(b.charAt(j), 16)).toString(16) + res;
+		
+	//document.write(res+"<br>"); //comment it
+    return res;
+}
+
+document.write("<b> Test XOR script. See more in the source code of this page.</b>"+"<br>");
+var hex1 = "b1c85c061c98e713def0e2eddddb432738674c9f8962f09b75e943d55f9fb39f";									//message
+document.write("message: "+hex1+"<br>");
+var hex2 = "121b0d3327a21b8048fc7ca6fd07aacc0d8df59b99db098686696573e3686e6c";									//passrord
+document.write("password: "+hex2+"<br>");
+var hex3 = XOR_hex(hex1, hex2); //a3d351353b3afc93960c9e4b20dce9eb35eab90410b9f91df38026a6bcf7ddf3				//cipher
+document.write("cipher: "+hex3+"<br>");
+var hex4 = XOR_hex(hex3, hex2); //b1c85c061c98e713def0e2eddddb432738674c9f8962f09b75e943d55f9fb39f == hex1		//recovered message
+document.write("recovered message: "+hex1+"<br>");
+(hex4===hex1)?document.write("message === recovered_message<br>"):document.write("message !== recovered_message<br>");
+var hex5 = XOR_hex(hex3, hex1); //121b0d3327a21b8048fc7ca6fd07aacc0d8df59b99db098686696573e3686e6c == hex2		//test password
+document.write("got password from cipher and message: "+hex1+"<br>");
+document.write("(a XOR b) XOR b = a; b = message; a = password; a XOR b = cipher; cipher XOR message = password."+"<br>");
+//formula is (a XOR b) XOR b = a
+(hex5===hex2)?document.write("recovered_password === password<br>"):document.write("recovered_password !== password<br>");
+
+document.write('<hr>'+'<br>'+'<br>'+
+'Why XOR?'+'<br>'+
+'XOR raises the cryptographic strength of the simple passwords.'+'<br>'+
+'Private key it is 256-bit value and it means 2^256 combinations for brute force.'+'<br>'+
+'But simple passwords is vulnerable for dictionary attacks, because using open source algorithms for derive their values.'+'<br>'+
+'XOR does not make any sence if brainwalletX hosted on the some site. '+'<br>'+
+'Random_seed can be viewed in browsers and it will be public information then.'+'<br>'+
+'But if any user will download this sourse and set up his own random_seed '+'<br>'+
+'then he can use his simple passwords with more security, through using this functions.'+'<br><hr>');
+</script>
+
+<br>
+For trading any cryptocurrency on the stock exchanges you can visit: <a href="https://coinmarketcap.com/">https://coinmarketcap.com/</a>
+<br> Don't loss your funds! Remember that: "Buy high, sell low!" =)
+
+</div>
+		
+		
+<div class="tab-pane fade" id="crypt">	
+	<form action="javascript:void(0);" class="form-horizontal" method="get" onsubmit="download(this['name'].value, this['text'].value)">
+            <fieldset>
+              <legend>Download Keyfile for encrypt/decrypt through OpenSSL or TrueCrypt</legend>
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="name">File name:</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-group-btn">
+                    <input class="form-control" id="name" name="name" placeholder="File name" title="File name for your keyfile." type="text" value="Key_file_256bit.txt" autofocus="">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-lg-2 control-label" for="keyfiledata">Passphrase</label>
+                <div class="col-lg-10 controls">
+                  <div class="input-group">
+                    <input class="form-control" type="password" id="keyfiledata" name="text" title="Key in keyfile data." readonly="readonly" placeholder="File name" autofocus="">
+                  <span class="input-group-btn">
+                      <button id="toggleKeyfiledata" class="btn btn-info" type="button">TEXT</button>
+                    </span>
+                  </div>
+				  <input type="submit" value="Download as binary" onclick="as_text=false;">
+				  <input type="submit" value="Download as text" onclick="as_text=true;">
+                </div>
+              </div>
+            </fieldset>
+          </form>
+		  <hr />
+<b>encrypt command line:</b> openssl enc -aes-256-cbc -salt -in secret.txt -out secret.enc -kfile keyfile_name.txt (or -k password)
+<br>
+<b>decrypt command line:</b> openssl enc -d -aes-256-cbc -in secret.enc > secret.txt -k password (or -kfile keyfile_name.txt)
+<br>
+Also you can use keyfile for encryption and decryption in TrueCrypt. (Latest stable version is 7.1a).
+<br><br>
+And... You can use this browser client-side cryptor: <a href="https://tutorialzine.com/2013/11/javascript-file-encrypter">javascript-file-encrypter (download zip available)</a>
+<br>There is need password only and you can use this hash.
+
+<br> Frame here:
+<iframe src="javascript-file-encrypter/index.html" width="100%" height="500 px" style="border:0"></iframe>
+</div>
+        
+		<hr />
         <footer>
           <p>
-            &copy; 2012&ndash;2015 <a href="https://twitter.com/brainwallet">Brainwallet</a><span class="pull-right">Powered by <a href="http://pages.github.com">GitHub Pages</a> &nbsp; <a href="https://github.com/brainwallet/brainwallet.github.io">GitHub Repository</a> &nbsp; <a href="https://github.com/brainwallet/brainwallet.github.io/archive/master.zip">Download ZIP</a></span>
+            <span class="pull-right"><a href="https://github.com/brainwalletX/brainwalletX.github.io">Forked GitHub Repository</a> | <a href="https://github.com/brainwallet/brainwallet.github.io">Original GitHub Repository (Out of Service)</a> | <a href="https://github.com/brainwalletX/brainwalletX.github.io/archive/master.zip">Download ZIP</a> | Donations: <a href="bitcoin:18y4imCZsarP79LPFmPHv7SmgZ4ohSrVNF">Bitcoin, BTG: GJf8kQpps3UeyFv931KvkSNB9ujjCSpQRS</a></span>
           </p>
         </footer>
       </div>

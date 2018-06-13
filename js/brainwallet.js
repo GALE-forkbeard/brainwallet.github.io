@@ -2464,6 +2464,15 @@ var openFile = function(event, id, as_base64) {
 		var reader = new FileReader();
 		reader.onload = function(){
 			var text = reader.result;
+			if(text.indexOf(String.fromCharCode(65533))!==-1){
+				as_base64='as_base64';
+				console.log('Unsigned character found. Next uploading as base64.');
+				openFile(event, id, as_base64);
+document.getElementById('src').setAttribute('title',
+'Unsigned character was been found in the source code.\n\
+Now this content was been uploaded as base64.\n\
+You can decode this from base64. Just select this source encoding.');
+			}
 			var node = document.getElementById(id);
 			if(as_base64==='as_base64'){
 				node.value = text.split(';base64,')[1];

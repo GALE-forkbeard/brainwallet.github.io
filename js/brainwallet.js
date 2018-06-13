@@ -2465,14 +2465,14 @@ var openFile = function(event, id, as_base64) {
 		reader.onload = function(){
 			var text = reader.result;
 			var node = document.getElementById(id);
-			if(as_base64='as_base64'){
+			if(as_base64==='as_base64'){
 				node.value = text.split(';base64,')[1];
 			}
 			else{
 				node.value = text;
 			}//console.log(reader.result.substring(0, 200));
 		};
-		if(as_base64='as_base64'){
+		if(as_base64==='as_base64'){
 			reader.readAsDataURL(input.files[0]);
 		}else{
 			reader.readAsText(input.files[0]);

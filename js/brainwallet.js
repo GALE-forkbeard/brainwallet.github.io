@@ -2459,6 +2459,7 @@ function download_as_binary(src){
 }
 
 //Load the textareas from the text files.
+var as_base64;
 var openFile = function(event, id, as_base64) {
 	var input = event.target;
 		var reader = new FileReader();
@@ -2466,12 +2467,12 @@ var openFile = function(event, id, as_base64) {
 			var text = reader.result;
 			if(text.indexOf(String.fromCharCode(65533))!==-1){
 				as_base64='as_base64';
-				console.log('Unsigned character found. Next uploading as base64.');
 				openFile(event, id, as_base64);
-document.getElementById('src').setAttribute('title',
+document.getElementById(id).setAttribute('title',
 'Unsigned character was been found in the source code.\n\
 Now this content was been uploaded as base64.\n\
-You can decode this from base64. Just select this source encoding.');
+You can decode original source of this - from base64.\n\
+);
 			}
 			var node = document.getElementById(id);
 			if(as_base64==='as_base64'){

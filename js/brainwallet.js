@@ -2471,7 +2471,7 @@ var openFile = function(event, id, as_base64) {
 document.getElementById(id).setAttribute('title',
 'Unsigned character was been found in the source code.\n\
 Now this content was been uploaded as base64.\n\
-You can decode original source of this - from base64.\n\
+You can decode original source of this - from base64.'
 );
 			}
 			var node = document.getElementById(id);

@@ -16,10 +16,17 @@ Notable features
 ___________________________________________________________________________________________________________
 - New changes available on this page: https://username1565.github.io/brainwallet.github.io/
 - Source code - here: https://github.com/username1565/brainwallet.github.io
-- Changes:
+___________________________________________________________________________________________________________
+Changes:
 - Add "javascript-file-encrypter".
-- Add there option to upload text keyfile with password as test inside.
-- Add openFile function there to load text field by file value.
+- Add there option to upload keyfile with password as text inside.
+- Add openFile-function there to load text field by file text-content.
+...
+See changes in javascript-file-encryptor, by comparing the code,
+or read README.md here: https://github.com/username1565/javascript-file-encrypter/blob/master/README.md
+or see changes.txt, here: https://github.com/username1565/brainwallet.github.io/blob/master/javascript-file-encrypter/changes.txt
+___________________________________________________________________________________________________________
+index.html changes:
 - Add key-file tab for downloading 32 bytes key, which can be using as password to encryption and decryption.
 - This value is available in separate field "passphrase" and generating as:
 - this = SHA256(priv_hex) XOR sha256(hash_of_random_seed + current_addr);
@@ -27,8 +34,8 @@ ________________________________________________________________________________
 - Come back the tab "Important Security Update!"
 - Add XOR page to do XOR values.
 - Add new tab t-addr. Conversion between transparent-addr <-> bitcoin-addr.
-
-- Brainwallet.js:
+___________________________________________________________________________________________________________
+Brainwallet.js:
 - Add multistring variable "var random_seed" to specify custom random-seed.
 - Dynamic text, for toggle buttons - added.
 - Generator update:
@@ -41,12 +48,12 @@ ________________________________________________________________________________
 - Add button to switch type of address (Default address, SegWit and transparent t-addr).
 - Add toogle trigger when "private key" selected.
 - "Toogle key" button triggered to do show private key, when private key selected.
-
-- Chains update:
+___________________________________________________________________________________________________________
+"Chains" update:
 - add "hash of random seed" and XOR button. Generated keys and specified keys can be xored to this.
 - add two strings in Paper Backup - to encode "Chain Code" and this is compatible with previous brainwallet.
-
-- Converter update:
+___________________________________________________________________________________________________________
+Converter update:
 - Add SHA-256 to converter.
 - Add converting bitocoin address to ZCash t-addr and t-addr to bitcoin address.
 - Using locally Get-queries there (separate function).
@@ -55,12 +62,13 @@ ________________________________________________________________________________
 - download result as UTF-8 encoded text - added.
 - RAW encoding for source code of files - added.
 - Now, you can see hex-code of file, for example. Also you can download the same file as binary.
-
-- "Sign" and "Verify" update:
+- Now, you can upload any binary file, as RAW-data, see base64 or hex, sign this, verify, then decode this from hex -> to base64 and download as binary. This is the same file, and this opened after renaming, with add extension.
+___________________________________________________________________________________________________________
+"Sign" and "Verify" update:
 - Fix. Armory HEX now give the verified status, after message signed, in the case when another coin selected in the list.
 - ARCH -> Sign -> Armory HEX -> Sign message -> verify -> Signed message -> MESSAGE VERIFIED.
-
-- Coins list update:
+___________________________________________________________________________________________________________
+Coins list update:
 - Now list with the coins is scrollable. Height is limited.
 - Add separate parameter to array with coins.
 - Now can be specified is coin using compressed or uncompressed keys and addresess.
@@ -73,5 +81,5 @@ ________________________________________________________________________________
 - VertCoin - added. https://www.coinexplorer.net/VTC
 - GeertCoin - added. Only 9.6 million total coins, short blockchain. Cheap coin.
 - Waves - added just for google. They have DEX with many different tokens traded each for each.
-__________________
+___________________________________________________________________________________________________________
 -This code need to be optimized and compress. So many comments there.

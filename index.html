@@ -418,12 +418,19 @@ To set up chaincode need paper backup with four strings."></textarea>
         <div class="tab-pane fade" id="converter">
           <form action="/" class="form-horizontal" method="get">
             <fieldset>
-              <legend>Converter</legend>
+              <legend>Converter
+					<button class="btn btn-info" type="button" id="tab-t_addr" title="Convert transparent address for Z-Cash" onclick="$('#tab-t_addr').trigger('click');">
+						Convert t-addr
+					</button>
+			</legend>
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="enc_from">Source Encoding</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_from">
-                    <label class="btn btn-default"><input id="from_hex" name="enc_from" type="radio" />Hex</label> <label class="btn btn-default" title="Text with ASCII encoding."><input id="from_text" name="enc_from" type="radio"/>ASCII</label> <label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label> <label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> <label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> <label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> <label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> <label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> <label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
+                    <label class="btn btn-default"><input id="from_hex" name="enc_from" type="radio" />Hex</label>
+					<label class="btn btn-default" title="Text with ASCII or UTF-8 encoding.">
+						<input id="from_text" name="enc_from" type="radio"/>Text</label>
+					<label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> <label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> <label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> <label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> <label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> <label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
 					<label class="btn btn-default"><input id="from_raw" name="enc_from" type="radio" />RAW</label>
                   </div>
                 </div>
@@ -443,11 +450,11 @@ To set up chaincode need paper backup with four strings."></textarea>
                 <label class="col-lg-2 control-label" for="enc_from">Convert To</label>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_to">
-                    <label class="btn btn-default active"><input id="to_hex" name="enc_to" type="radio" />Hex</label> <label class="btn btn-default" title="Text with ASCII encoding."><input id="to_text" name="enc_to" type="radio"/>ASCII</label> <label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> <label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> <label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> <label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> <label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> <label class="btn btn-default"><input id="to_easy16" name="enc_to" type="radio" />Easy16</label><label class="btn btn-default" id="to_sha256"><input id="to_sha256" name="enc_to" type="radio" />SHA256</label>
+                    <label class="btn btn-default active"><input id="to_hex" name="enc_to" type="radio" />Hex</label>
+					<label class="btn btn-default" title="Text with ASCII or UTF-8 encoding.">
+						<input id="to_text" name="enc_to" type="radio"/>Text</label>
+					<label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> <label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> <label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> <label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> <label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> <label class="btn btn-default"><input id="to_easy16" name="enc_to" type="radio" />Easy16</label><label class="btn btn-default" id="to_sha256"><input id="to_sha256" name="enc_to" type="radio" />SHA256</label>
                   </div>
-					<button class="btn btn-info" type="button" id="tab-t_addr" title="Convert transparent address for Z-Cash" onclick="$('#tab-t_addr').trigger('click');">
-						Convert t-addr
-					</button>
                 </div>
               </div>
               <div class="form-group">

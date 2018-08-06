@@ -83,3 +83,20 @@ Coins list update:
 - Waves - added just for google. They have DEX with many different tokens traded each for each.
 ___________________________________________________________________________________________________________
 -This code need to be optimized and compress. So many comments there.
+__________________________
+What need to fix?
+Check and verify signatures for another altcoins, using compressed private keys...
+For example, Geertcoin have compressed private keys and address...
+1. Go to https://username1565.github.io/brainwallet.github.io/
+2. Select Geertcoin in the list.
+3. Default private key in generator: RZUp8o9zpfvDqHixCok4gcHLneqpo8ZEQBM1dVzTLBZ9p5TDnxd5
+address corresponded for this private key is GNaix3HVRokcTW9CPM9N8vsVtuzmjguTrv - both are compressed...
+4. Go to "Sign" tab, and press the button "Sign Message".
+5. Signed message can be [verified now, in brainwallet](https://username1565.github.io/brainwallet.github.io/#verify?vrAddr=GNaix3HVRokcTW9CPM9N8vsVtuzmjguTrv&vrMsg=This%20is%20an%20example%20of%20a%20signed%20message.&vrSig=HzRtqv21fSm%2F6LBmFX57ppSddO4GXihI60rDRAET1baSt1D9fGsGIie75xgBJfcDZOF6bLZKjKA9odKzobsaRHY%3D)
+bitcoin-qt version of this message, can be verified too, and only in brainwallet...
+
+But in geertcoin-qt.exe this message cann't be verified!
+Also, message, signed in geertcoin-qt.exe cannt be verified in brainwallet...
+This need to test for all altcoins, where using compressed and uncompressed keys.
+
+Best regards...

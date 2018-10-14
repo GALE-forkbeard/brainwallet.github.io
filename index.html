@@ -47,16 +47,22 @@
           <ul class="nav navbar-nav navbar-right">
             <li class="dropdown" id="crCurrency">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="crSelect"><span id="crName">BTC</span>&nbsp;<b class="caret">&nbsp;</b></a>
-              <ul class="dropdown-menu dropdown-menu-two-column scrollable-menu">
+              <ul class="dropdown-menu scrollable-menu">
                 <!-- data target is "address_version,privatekey_version (optional)", privatekey_version is address_version+128 by default -->
                 <!-- data target is "compressed/uncompressed,address_version,privatekey_version (optional)", privatekey_version is address_version+128 by default -->
+				<!--
+						The attribute strMessageMagic="VALUE" contains magic prefix for signing message and verify signed message in qt wallets.
+						After parsing, '\n' will be escaped as "\\n"
+						this value you can find in the source code for each coin in the files main.cpp, validation.cpp or another...
+				-->
                 <!--To using new SegWit address with bytes [0x00, 0x14] add title="SegWit address" to the tag a (see tooltips)-->
 				<li><a data-target="0x00" href="http://blockchain.info"><span class="pull-right">BTC</span>Bitcoin</a></li>
-				<li><a data-target="compressed, 0x19, 0xbf" href="http://explorer.signatum.io"><span class="pull-right">SIGT</span>Signatum</a></li>
+				<li><a data-target="compressed, 0x19, 0xbf" strMessageMagic="Signatum Signed Message:\n" href="http://explorer.signatum.io"><span class="pull-right">SIGT</span>Signatum</a></li>
                 <li><a data-target="uncompressed,0x34" href="#generator"><span class="pull-right">611</span>SixEleven</a></li>
                 <li><a data-target="compressed, 0x21, 0x80" href="http://explorer.signatum.io"><span class="pull-right">EMC</span>EmerCoin</a></li>
-				<li><a data-target="compressed,0x47, 0x80" href="http://explorer.signatum.io"><span class="pull-right">VTC</span>Vertcoin</a></li>
+				<li><a data-target="compressed,0x47, 0x80" strMessageMagic="Vertcoin Signed Message:\n" href="https://bchain.info/vtc/"><span class="pull-right">VTC</span>Vertcoin</a></li>
                 <!--According the data of Bitcoin Gold scripts for web-wallet "coinbin-master" - public key byte for BTG is 0x26, and all keys - compressed -->
+				<li><a data-target="uncompressed,0x4c,0xcc" strMessageMagic="DarkCoin Signed Message:\n" href="https://explorer.dash.org/chain/Dash"><span class="pull-right">DASH</span>Dash</a></li>
 				<li><a data-target="compressed,0x26" href="https://btgblocks.com/"><span class="pull-right">BTG</span>Bitcoin Gold (G)</a></li>
                 <li><a data-target="compressed,0x17" href="https://btgblocks.com/" title="SegWit address"><span class="pull-right">BTG</span>Bitcoin Gold (A)</a></li>
                 <li><a data-target="0x17" href="https://chainz.cryptoid.info/arch/address.dws"><span class="pull-right">ARCH</span>Archcoin</a></li>
@@ -73,7 +79,7 @@
                 <li><a data-target="0x26" href="http://gmc.cryptocloudhosting.org:3001"><span class="pull-right">GMC</span>GameCredits</a></li>
                 <li><a data-target="0x66" href="http://exploretheblocks.com:2750"><span class="pull-right">IFC</span>Infinitecoin</a></li>
                 <li><a data-target="0x8A" href="http://d.evco.in/abe"><span class="pull-right">IXC</span>Ixcoin</a></li>
-                <li><a data-target="0x30" href="http://explorer.litecoin.net"><span class="pull-right">LTC</span>Litecoin</a></li>
+                <li><a data-target="0x30" strMessageMagic="Litecoin Signed Message:\n" href="http://explorer.litecoin.net"><span class="pull-right">LTC</span>Litecoin</a></li>
                 <li><a data-target="0x32" href="http://explore.marscoin.org"><span class="pull-right">MRS</span>Marscoin</a></li>
                 <li><a data-target="0x32" href="http://www.chainbrowser.com/memorycoin"><span class="pull-right">MMC</span>Memorycoin</a></li>
                 <li><a data-target="0x32" href="https://coinplorer.com/MEC"><span class="pull-right">MEC</span>Megacoin</a></li>
@@ -93,8 +99,9 @@
                 <li><a data-target="0x47" href="http://explorer.vertcoin.org"><span class="pull-right">VTC</span>Vertcoin</a></li>
                 <li><a data-target="0x49" href="http://wdc.cryptocoinexplorer.com"><span class="pull-right">WDC</span>Worldcoin</a></li>
                 <li><a data-target="0x50" href="http://bit.usr.sh:2750"><span class="pull-right">ZET</span>Zetacoin</a></li>
-				<li><a class="selected" data-target="compressed, 0x26, 0xa6" href="https://prohashing.com/explorer/Geertcoin/"><span class="pull-right">GEERT</span>GeertCoin</a></li>
-				<li><a data-target="uncompressed, 0x1a, 0x9a" href="https://prohashing.com/explorer/Beachcoin/"><span class="pull-right">SAND</span>BeachCoin</a></li>
+				<li><a class="selected" data-target="compressed, 0x26, 0xa6" strMessageMagic="Geertcoin Signed Message:\n" href="https://prohashing.com/explorer/Geertcoin/"><span class="pull-right">GEERT</span>GeertCoin</a></li>
+				<li><a data-target="uncompressed, 0x1a, 0x9a" strMessageMagic="Beachcoin Signed Message:\n" href="https://prohashing.com/explorer/Beachcoin/"><span class="pull-right">SAND</span>BeachCoin</a></li>
+				<li><a data-target="compressed, 0x07, 0xc6" href="https://miner-control.de/explorer/CGUR"><span class="pull-right">CGUR</span>AllCoinGuru</a></li>
 				<li><a data-target="" href="https://waveswallet.io/"><span class="pull-right">WAVES</span>Waves</a></li>
 				<!--test
 				<li><a data-target="" href=""><span class="pull-right">TEST1</span>0</a></li>
@@ -126,6 +133,7 @@
                       <div class="col-xs-6" title="Compressed or uncompressed private key and addressed for this coin?" id="compressed"></div>
 					  <div class="col-xs-6" title="Private Key Version for this coin" id="PrivVer"></div>
                       <a class="col-xs-6" title="Link to block-explorer site for this coin" id="block_explorer"></a>
+					  <div class="col-xs-6" title="Magic prefix for signing and verify signed message" id="strMessageMagic"></div>					  
 				    </div>
                   </div>
               </div>
@@ -561,7 +569,8 @@ To set up chaincode need paper backup with four strings."></textarea>
               </div>
               <div class="form-group">
                 <div class="col-lg-offset-2 col-lg-10 controls">
-                  <button class="btn btn-default" id="sgSign" title="Signatures require a random number which means signing the same data twice results in different sigs" type="button">Sign Message</button>
+                  <div style="display: inline-block;" title="Magic prefix for signing and verify signed message" id="sign_strMessageMagic"></div><br>
+				  <button class="btn btn-default" id="sgSign" title="Signatures require a random number which means signing the same data twice results in different sigs" type="button">Sign Message</button>
                   &nbsp;&nbsp;<span class="help-inline" id="sgLabel"></span>
 				  <a id="download-signed" style="display:none;" href="" title="Download signed message.">Download signed message.</a>
                 </div>
@@ -592,6 +601,7 @@ To set up chaincode need paper backup with four strings."></textarea>
                     <label class="btn btn-default active" title="RFC2440-like"><input id="vrFromMessage" name="vrFrom" type="radio" checked/>Signed Message</label>
                     <label class="btn btn-default"><input id="vrFromForm" name="vrFrom" type="radio" />Bitcoin-QT</label>
                   </div>
+				  <div style="display: inline-block;" title="Magic prefix for signing and verify signed message" id="verify_strMessageMagic"></div>
                 </div>
               </div>
               <div class="form-group vrAddr" hidden>

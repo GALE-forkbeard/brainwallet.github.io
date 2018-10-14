@@ -72,6 +72,9 @@ To change default coin:
     var ADDRESS_URL_PREFIX = Default_ADDRESS_URL_PREFIX;
 	var gen_compressed = Default_gen_compressed;
 	
+	//this have the value "Bitcoin Signed Message:\n" and defined as default in bitcoinsig.js
+	//see function function msg_digest(message, strMessageMagic)
+	var strMessageMagic = "Bitcoin Signed Message:\n";
 	
     var gen_eckey = null;
     var gen_pt = null;
@@ -460,7 +463,11 @@ to your associated bitcoin address\n\
 		}
 		$('#block_explorer').text("Block-explorer: "+ADDRESS_URL_PREFIX);
 		$('#block_explorer').attr('href', ADDRESS_URL_PREFIX);
-	}	
+		
+		$('#strMessageMagic').text('strMessageMagic: \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+		$('#sign_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+		$('#verify_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+	}
 			
 	//sec_exponent = hash(passphrase) XOR hash(random_seed)
     function genCalcHash() {
@@ -1854,6 +1861,7 @@ Or select another encoding to input the text here.");
             eckey.pubKeyHash = Bitcoin.Util.sha256ripe160(eckey.pub);
             addr = new Bitcoin.Address(eckey.getPubKeyHash());
             addr.version = PUBLIC_KEY_VERSION;
+			eckey.compressed = compressed;
 
             if (privkey_version!=PRIVATE_KEY_VERSION)
             {
@@ -1931,9 +1939,23 @@ Or select another encoding to input the text here.");
       if (sgType=='armory_base64' || sgType=='armory_clearsign' || sgType=='armory_hex') {
         $('#sgSig').val(armory_sign_message (p.key, p.address, sgMsg, p.compressed, p.addrtype, sgType));
       } else {
-        var sgSig = sign_message(p.key, sgMsg, p.compressed, p.addrtype);
-        $('#sgSig').val(joinMessage(sgType, p.address, sgMsg, sgSig));
-        label = '(<a href="#verify'+vrPermalink(p.address, sgMsg, sgSig)+'" target=_blank>permalink</a>)';
+        var sgSig = sign_message(p.key, sgMsg, strMessageMagic, p.compressed, p.addrtype);
+
+/*		
+		console.log(
+						'sgSign:\n',
+						'sign_message(\n',
+						' p.key', p.key,'\n',
+						' sgMsg', sgMsg,'\n',
+						' strMessageMagic', strMessageMagic.split('\n').join('\\n'),'\n',
+						' p.compressed', p.compressed,'\n',
+						' p.addrtype', p.addrtype,'\n',
+						')\n',
+						' sgSig: ', sgSig
+		)
+*/
+		$('#sgSig').val(joinMessage(sgType, p.address, sgMsg, sgSig));
+        label = '(<a href="#verify'+vrPermalink(p.address, sgMsg, sgSig, strMessageMagic)+'" target=_blank>permalink</a>)';
       }
 
       $('#sgLabel').html(label);
@@ -1944,9 +1966,9 @@ Or select another encoding to input the text here.");
 
     // -- verify --
 
-    function vrPermalink(addr,msg,sig)
+    function vrPermalink(addr,msg,sig,strMessageMagic)
     {
-      return '?vrAddr='+encodeURIComponent(addr)+'&vrMsg='+encodeURIComponent(msg)+'&vrSig='+encodeURIComponent(sig);
+      return '?vrAddr='+encodeURIComponent(addr)+'&vrMsg='+encodeURIComponent(msg)+'&vrSig='+encodeURIComponent(sig)+'&vrstrMessageMagic='+encodeURIComponent(strMessageMagic);
     }
 
     function splitSignature(s)
@@ -2013,7 +2035,7 @@ Or select another encoding to input the text here.");
       return false;
     }
 
-    function vrVerify() {
+    function vrVerify(strMessageMagic) {
 
         var vrMsg = $('#vrMsg').val();
         var vrAddr = $('#vrAddr').val();
@@ -2047,13 +2069,27 @@ Or select another encoding to input the text here.");
 
         if (!addr) {
           try { vrVer = parseBase58Check(vrAddr)[0]; } catch (err) {};
-          addr = verify_message(vrSig, vrMsg, vrVer);
+          //addr = verify_message(vrSig, vrMsg, strMessageMagic, vrVer);
+		  addr = verify_message(vrSig, vrMsg, strMessageMagic, vrVer, compressed);
+
+/*
+		  console.log(
+						'vrVerify:','\n',
+						' verify_message(','\n',
+						'  vrSig', vrSig, '\n',
+						'  vrMsg', vrMsg, '\n',
+						'  strMessageMagic', strMessageMagic.split('\n').join('\\n'), '\n',
+						'  vrVer', vrVer, '\n',
+						'  compressed', compressed, '\n',
+						' )\n'
+		  );
+*/
         }
 
         var armoryMsg = "";
         if (p.type=="armory_base64" && p.message) {
           armoryMsg = p.message;
-          console.log(armoryMsg);
+          //console.log(armoryMsg);
         }
 
         $('#vrAlert').empty();
@@ -2072,7 +2108,7 @@ Or select another encoding to input the text here.");
           // insert link here
           if (vrAddr==addr && p.type!="armory_hex")
             label = vrAddr +
-              ' (<a href="#verify'+vrPermalink(vrAddr,vrMsg,vrSig)+'" target=_blank>permalink</a>)';
+              ' (<a href="#verify'+vrPermalink(vrAddr, vrMsg, vrSig, strMessageMagic)+'" target=_blank>permalink</a>)';
 
           clone.find('#vrAddrLabel').html(label);
         }
@@ -2084,15 +2120,15 @@ Or select another encoding to input the text here.");
         return false;
     }
 
-    function vrOnInput() {
+    function vrOnInput(strMessageMagic) {
         $('#vrAlert').empty();
-        vrVerify();
+        vrVerify(strMessageMagic);
     }
 
 
     function vrOnChange() {
         clearTimeout(timeout);
-        timeout = setTimeout(vrOnInput, TIMEOUT);
+        timeout = setTimeout(vrOnInput(strMessageMagic), TIMEOUT);
     }
 
     function crChange()
@@ -2163,13 +2199,24 @@ Or select another encoding to input the text here.");
 	  
       var name = $(this).text();
       var child = $(this).children();
-      if (child.length)
-        name = child.text();
+      if (child.length){name = child.text();}
 
 		ticker = $(this).find('span').text();
 		coin_name = $(this).text().split(ticker)[1];
 		$('#coin_name').attr('ticker', ticker);
 		$('#coin_name').attr('coin_name', coin_name);
+		
+		strMessageMagic = $(this).attr('strMessageMagic');						//try to extract strMessageMagic from attribute
+		strMessageMagic = strMessageMagic || "Bitcoin Signed Message:\\n";		//if this undefined - set default with escaped '\n', '\\n'
+		strMessageMagic = strMessageMagic.split('\\n').join('\n');				//unescape '\\n' to '\n'
+		//console.log(strMessageMagic); //now \n is LF (0x0a)
+		
+			//if this undefined or not specified - will be used default parameter.
+			//See function msg_digest(message, strMessageMagic) in bitcoinsig.js
+		$('#coin_name').attr('strMessageMagic', strMessageMagic);
+		
+		
+		//console.log("crChange: strMessageMagic", strMessageMagic);
 		
 		//console.log(
 		//	'p[0]', p[0], 'p[1]', p[1], 'p[2]', p[2],
@@ -2380,6 +2427,13 @@ index.html
           }
           if (p.vrMsg && p.vrSig) {
             $('#vrMsg').val(joinMessage( "inputs_io", (p.vrAddr||"<insert address here>"), p.vrMsg, p.vrSig ));
+			if(p.vrstrMessageMagic){
+				strMessageMagic = decodeURIComponent(p.vrstrMessageMagic);
+				//console.log('strMessageMagic', strMessageMagic);
+				$('#strMessageMagic').text('strMessageMagic: \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+				$('#sign_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+				$('#verify_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+			}
             vrVerify();
           }
         }
@@ -2496,7 +2550,6 @@ index.html
 
 				setSegwitAddr(type);
         });
-		
     });
 })(jQuery);
 

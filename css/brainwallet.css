@@ -16,8 +16,9 @@ body {
 }
 
 .scrollable-menu {
+	width:200px;
     height: auto;
-    max-height: 800px;
+    max-height: 500px;
     overflow-x: hidden;
 }
 

@@ -122,12 +122,22 @@ var Electrum = new function () {
 		, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         onUpdate(r);
         counter++;
-        if (counter >= range+addChange) {
+        if (counter >= range+addChange) {		//from https://brainwalletX.github.io
+//        if (counter >= range) {				//number of wallets is fixed,
+												//but last address not corresponding
+												//with address from https://brainwallet.github.io
+												//even if specified "Primary Addresses"+1
+												//So I leave old condition with +1 address to prevent users loss their funds.
             if (onSuccess) 
                 onSuccess();
         } else {
-            timeout = setTimeout(calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed), 0);
-        }
+			timeout = setTimeout(
+				function(){
+					calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
+				},
+				0
+			);
+		}
     }
 
     this.init = function(_seed, update, success) {

@@ -201,7 +201,12 @@ To change default coin:
         var group = field.closest('.controls').parent();
         if (err) {
             group.addClass('has-error');
-            group.attr('title',msg);
+            if($('#txSec').val().substring(0,2)==='0x'){
+				group.attr('title',"Seems, like Ethereum private key.\n\nSelect Ethereum in dropdown menu!");	
+			}
+			else{
+				group.attr('title',msg);
+			}
         } else {
             group.removeClass('has-error');
             group.attr('title','');
@@ -294,13 +299,13 @@ To change default coin:
     function getAddressURL(addr)
     {
         if (ADDRESS_URL_PREFIX.indexOf('explorer.dot-bit.org')>=0 )
-          return ADDRESS_URL_PREFIX+'/a/'+addr;
+          return ADDRESS_URL_PREFIX+((ADDRESS_URL_PREFIX[ADDRESS_URL_PREFIX.length-1]==='/')?'':'/')+'/a/'+addr;
         else if (ADDRESS_URL_PREFIX.indexOf('address.dws')>=0 )
           return ADDRESS_URL_PREFIX+ "?" + addr;
         else if (ADDRESS_URL_PREFIX.indexOf('chainbrowser.com')>=0 )
-          return ADDRESS_URL_PREFIX+'/address/'+addr+'/';
+          return ADDRESS_URL_PREFIX+((ADDRESS_URL_PREFIX[ADDRESS_URL_PREFIX.length-1]==='/')?'':'/')+'/address/'+addr+'/';
         else
-          return ADDRESS_URL_PREFIX+'/address/'+addr;
+          return ADDRESS_URL_PREFIX+((ADDRESS_URL_PREFIX[ADDRESS_URL_PREFIX.length-1]==='/')?'':'/')+'address/'+addr;
     }
 
 	//XOR hex strings function
@@ -389,7 +394,7 @@ to your associated bitcoin address\n\
 		}
 
         $('#addr').val(addr);
-		$('#name').val($('#addr').val()+".txt");				//addr to key file name
+		$('#name').val($('#addr').val()+".txt");				//addr to key_file name
 
 		var payload = hash;					//bytes of secret exponent
 		if (compressed)
@@ -399,6 +404,7 @@ to your associated bitcoin address\n\
         var sec = new Bitcoin.Address(payload); //correctly updated
 		sec.version = PRIVATE_KEY_VERSION;
 		
+		$('#txSec').val(sec);
 		$('#sec').val(sec);
 		$('#sgSec').val($('#sec').val());
 		$('#sgAddr').val($('#addr').val());
@@ -467,6 +473,58 @@ to your associated bitcoin address\n\
 		$('#strMessageMagic').text('strMessageMagic: \"'+strMessageMagic.split('\n').join('\\n')+'\"');
 		$('#sign_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
 		$('#verify_strMessageMagic').html('<b>strMessageMagic:</b> \"'+strMessageMagic.split('\n').join('\\n')+'\"');
+
+		//display Ethereum privkey and address from secret exponent
+		//console.log($('#crName').text());
+		if($('#crName').text()==="ETH"){	//if Ethereum selected
+			//disable buttons "compressed" and "uncompressed".
+			$('#gen_comp [name=comp]').addClass('disabled');
+			$('#gen_comp [name=uncomp]').addClass('disabled');
+			
+			//generate ethereum private key and address
+
+			var account = new Web3EthAccounts();
+				
+			var priv0x = '0x0000000000000000000000000000000000000000000000000000000000000000';
+			var priv_keys_i_length = hash_str.length;
+			var start_position = 2+64-priv_keys_i_length;
+			var nulled_0x_priv = '';
+	
+			nulled_0x_priv = priv0x.substring(0, start_position)+hash_str;
+					
+			var keyPair = account.privateKeyToAccount(nulled_0x_priv);
+			var pubKey = JSON.parse(JSON.stringify(keyPair.address));
+			var privKey = JSON.parse(JSON.stringify(keyPair.privateKey));
+			
+			//insert ethereum address and private key in the field
+			$('#sec').val(privKey);
+			$('#addr').val(pubKey);
+			$('#sgSec').val(privKey);
+			$('#txSec').val(privKey);
+			$('#sgAddr').val(pubKey);
+			$('#name').val(pubKey+".txt");					//addr to key_file name
+			
+			//regenerate qr-codes
+			//address
+			var qrCode = qrcode(3, 'M');
+			qrCode.addData(pubKey);
+			qrCode.make();
+
+			$('#genAddrQR').html(qrCode.createImgTag(4));
+			$('#genAddrURL').attr('href', getAddressURL(pubKey));
+			$('#genAddrURL').attr('title', pubKey);
+			
+			//privkey
+			var keyQRCode = qrcode(5, 'M');
+			keyQRCode.addData(privKey);
+			keyQRCode.make();
+			$('#genKeyQR').html(keyQRCode.createImgTag(4));
+			
+			 $('#der').val('See the source code of web3-eth-acccounts.js to get DER.');
+			 $('#pub').val('See the source code of web3-eth-acccounts.js to get pub.');
+			 $('#h160').val('See the source code of web3-eth-acccounts.js. Using other hashing algorithm (sha3 and keccak256).');
+		}
+	//end function
 	}
 			
 	//sec_exponent = hash(passphrase) XOR hash(random_seed)
@@ -1435,6 +1493,41 @@ Or select another encoding to input the text here.");
     }
 
     function chCallback(r) {
+		if($('#crName').text()==="ETH"){	//if ethereum selected
+			//generate ethereum privkey and address,
+			//corresponding the WIF key (hex encoded).
+			if(r[1].indexOf('0x')!==-1){
+				console.log('already ethereum privkey');
+			}
+			else if(isBase58(r[1])){
+				var privkey_hex = Crypto.util.bytesToHex(parseBase58Check(r[1])[1]); //get hex from priv WIF
+
+				const account = new Web3EthAccounts();
+				//display hex
+				//console.log(privkey_hex);
+		
+				//if not full hex, format this
+				var priv0x = '0x0000000000000000000000000000000000000000000000000000000000000000';
+				var privkey_hex_length = privkey_hex.length;
+				var start_position = 2+64-privkey_hex_length;
+				var nulled_0x_priv = '';
+	
+				nulled_0x_priv = priv0x.substring(0, start_position)+privkey_hex;
+
+				//get private key and public key from 0x000000...priv_hex
+				var keyPair = account.privateKeyToAccount(nulled_0x_priv);
+				var pubKey = JSON.parse(JSON.stringify(keyPair.address));
+				var privKey = JSON.parse(JSON.stringify(keyPair.privateKey));
+				
+				//change previous bitcoin priv key and address to ethereum address
+				r[0] = pubKey;
+				r[1] = privKey;
+			}
+			else{
+				console.log('not ethereum address and '+r[1]+' not base58 encoded.');
+			}
+		}
+
         chAddrList.push(r);
         $('#chList').append(chAddrToCSV(chAddrList.length,r));
     }
@@ -1525,18 +1618,24 @@ Or select another encoding to input the text here.");
     }
 
     function txSetUnspent(text) {
-        var r = JSON.parse(text);
-        txUnspent = JSON.stringify(r, null, 4);
-        $('#txUnspent').val(txUnspent);
-        var address = $('#txAddr').val();
-        TX.parseInputs(txUnspent, address);
-        var value = TX.getBalance();
-        var fval = Bitcoin.Util.formatValue(value);
-        var fee = parseFloat($('#txFee').val());
-        $('#txBalance').val(fval);
-        var value = Math.floor((fval-fee)*1e8)/1e8;
-        $('#txValue').val(value);
-        txRebuild();
+
+		var r = (text==='') ? '' : JSON.parse(text);	//if text==='', r will be empty string, else - parse JSON-response with unspent outputs...
+
+		if(r!==''){	//if r not empty string...
+			//do this all
+			txUnspent = JSON.stringify(r, null, 4);
+			$('#txUnspent').val(txUnspent);
+			var address = $('#txAddr').val();
+			TX.parseInputs(txUnspent, address);
+			var value = TX.getBalance();
+			var fval = Bitcoin.Util.formatValue(value);
+			var fee = parseFloat($('#txFee').val());
+			$('#txBalance').val(fval);
+			var value = Math.floor((fval-fee)*1e8)/1e8;
+			$('#txValue').val(value);
+			txRebuild();
+		}
+		//else, do nothing...
     }
 
     function txUpdateUnspent() {
@@ -1559,7 +1658,35 @@ Or select another encoding to input the text here.");
     function txGetUnspent() {
         var addr = $('#txAddr').val();
 
-        var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&active=' + addr :
+        if(addr.substring(0, 2)==='0x'){	//if address beginning from '0x' - this is Ethereum address
+			var notification = 'Generate transaction offline, on client-side, you can here:\n\
+https://www.myetherwallet.com/#offline-transaction';
+			
+			$('#txDest').attr("readonly", "readonly");
+			$('#txUnspent').attr("readonly", "readonly");
+			$('#txValue').attr("readonly", "readonly");
+			$('#txFee').attr("readonly", "readonly");
+			
+			$('#txUnspent').val(notification);
+			$('#txDest').val("Download MyEtherWallet as ZIP");
+			$('#txJSON').val(notification);
+			$('#txHex').val(notification);
+			
+			return;
+		}
+		else{
+			$('#txDest').removeAttr("readonly");
+			$('#txValue').removeAttr("readonly");
+			$('#txFee').removeAttr("readonly");
+			$('#txUnspent').attr("readonly");
+			
+			$('#txUnspent').val('');
+			$('#txDest').val("");
+			$('#txJSON').val('');
+			$('#txHex').val('');
+		}
+		
+		var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&active=' + addr :
             'https://blockexplorer.com/q/mytransactions/' + addr;
 
         url = prompt('Press OK to download transaction history:', url);
@@ -1837,7 +1964,25 @@ Or select another encoding to input the text here.");
 
     // -- sign --	
     function updateAddr(from, to, bUpdate) {
-        setErrorState(from, false);
+
+		if($('#crName').text()==="ETH"){	//if ethereum selected
+			if(from.val().length==66){		//check length for private key
+				var account = new Web3EthAccounts();						
+				var keyPair = account.privateKeyToAccount(from.val());		
+				var pubKey = JSON.parse(JSON.stringify(keyPair.address));	//get address from privkey
+				to.val(pubKey)												//insert address in the field on the tab "sign"
+
+				return {"key":from.val(), "address":pubKey}; 				//and do not continue next code.
+			}else{
+				console.log('Invalid length for Ethereum private key. Must be 64 hex symbols + 0x = 66 characters.'); //show error
+				return false;	//do not continue next code...
+			}
+			
+		}
+		
+		//else, change bitcoin or altcoins address.
+		
+		setErrorState(from, false);
         var sec = from.val();
         var addr = '';
         var eckey = null;
@@ -1924,20 +2069,26 @@ Or select another encoding to input the text here.");
     }
 
     function sgSign() {
+		//console.log('sgSign function - brainwallet.js');
       var sgType = $('#sgType input:radio:checked').attr('value');
       var sgMsg = $('#sgMsg').val();
 
       var p = updateAddr($('#sgSec'), $('#sgAddr'));
 
-      if ( !sgMsg || !p )
-        return;
+		if ( !sgMsg || !p ){
+			return;
+		}
 
       sgMsg = fullTrim(sgMsg);
 
       var label = '';
 
       if (sgType=='armory_base64' || sgType=='armory_clearsign' || sgType=='armory_hex') {
-        $('#sgSig').val(armory_sign_message (p.key, p.address, sgMsg, p.compressed, p.addrtype, sgType));
+		if($('#crName').text()==="ETH"){
+			$('#sgSig').val('Not supporting...');
+		}else{
+			$('#sgSig').val(armory_sign_message (p.key, p.address, sgMsg, p.compressed, p.addrtype, sgType));
+		}
       } else {
         var sgSig = sign_message(p.key, sgMsg, strMessageMagic, p.compressed, p.addrtype);
 
@@ -2099,6 +2250,12 @@ Or select another encoding to input the text here.");
         // also check address was mentioned somewhere in the message (may be unsafe)
         if (!vrAddr && addr && vrMsg.search(addr)!=-1)
           vrAddr = addr;
+		  
+		if(vrAddr!==addr && vrAddr.toLowerCase() === addr.toLowerCase())
+		{
+			addr = vrAddr = vrAddr.toLowerCase();
+			//toLowerCase(), because in MyEtherWallet using LowerCase address. https://www.myetherwallet.com/signmsg.html
+		}
 
         if (addr && (vrAddr==addr || !vrAddr)) {
           clone = vrAddr==addr ? $('#vrSuccess').clone() : $('#vrWarning').clone();
@@ -2272,6 +2429,8 @@ index.html
 		var segwit_addr = $(this).attr('title');
 		setSegwitAddr(segwit_addr);
 		
+		txOnChangeSec();
+
       return false;
     }
 

@@ -167,7 +167,7 @@ var Armory = new function () {
     var onSuccess;
     var onUpdate;
 
-    function calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {		
+    function calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {
         var r = armory_extend_chain(pubKey, chainCode, privKey, true, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
         onUpdate(r);
         pubKey = r[2];
@@ -176,12 +176,19 @@ var Armory = new function () {
 		if(counter==1){firstpriv = privKey;}
 		
         if (counter < range) {
-            timeout = setTimeout(calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed), 0);
+
+			timeout = setTimeout(
+				function(){
+					calcAddr(PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed);
+				},
+				0
+			);
+
         } else {
             if (onSuccess)
                 onSuccess();
         }
-}
+	}
 
     this.gen = function(seed, _range, update, success, PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed){
         var keys = armory_decode_keys(seed);
@@ -241,6 +248,7 @@ function armory_split_string(str) {
 
 function armory_sign_message(private_key, address, message, compressed, addrtype, mode)
 {
+	//console.log('armory_sign_message function - armory.js');
   // armory needs \r\n for some reason
   message = message.replace(/\n/g,'\r\n');
 

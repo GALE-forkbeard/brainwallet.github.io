@@ -14,6 +14,7 @@
 	
     <script src="js/bootstrap.min.js"></script>
     <script src="js/bitcoinjs-min.js"></script>
+	<script src="js/web3-eth-accounts.js">//generate Ethereum address from the secret exponent hex. Sign messages and verify sinature.</script>
     <script src="js/qrcode.js"></script>
     <script src="js/rfc1751.js"></script>
     <script src="js/mnemonic.js"></script>
@@ -57,6 +58,12 @@
 				-->
                 <!--To using new SegWit address with bytes [0x00, 0x14] add title="SegWit address" to the tag a (see tooltips)-->
 				<li><a data-target="0x00" href="http://blockchain.info"><span class="pull-right">BTC</span>Bitcoin</a></li>
+				<li><a data-target="uncompressed, 0x00, 0x00" strMessageMagic="\x19Ethereum Signed Message:\n" href="http://etherscan.io/"><span class="pull-right">ETH</span>Ethereum</a></li>
+				<!--
+					The data will be UTF-8 HEX decoded and enveloped as follows:
+					"\x19Ethereum Signed Message:\n" + message.length + message
+					and hashed using keccak256.
+				-->
 				<li><a data-target="compressed, 0x19, 0xbf" strMessageMagic="Signatum Signed Message:\n" href="http://explorer.signatum.io"><span class="pull-right">SIGT</span>Signatum</a></li>
                 <li><a data-target="uncompressed,0x34" href="#generator"><span class="pull-right">611</span>SixEleven</a></li>
                 <li><a data-target="compressed, 0x21, 0x80" href="http://explorer.signatum.io"><span class="pull-right">EMC</span>EmerCoin</a></li>
@@ -321,7 +328,7 @@ To set up chaincode need paper backup with four strings."></textarea>
               <div class="form-group">
                 <label class="col-lg-2 control-label" for="chList">Chain</label>
                 <div class="col-lg-10 controls">
-                  <textarea class="form-control" id="chList" readonly="readonly" rows="13"></textarea>
+                  <textarea class="form-control" id="chList" readonly="readonly" rows="13" style="width:1000px"></textarea>
                 </div>
               </div>
             </fieldset>

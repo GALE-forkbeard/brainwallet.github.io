@@ -1701,11 +1701,11 @@ https://www.myetherwallet.com/#offline-transaction';
               alert( typeof(jqxhr.responseText)=='undefined' ? jqxhr.statusText
                 : ( jqxhr.responseText!='' ? jqxhr.responseText : 'No data, probably Access-Control-Allow-Origin error.') );
             });
-*/
+
         } else {
           txSetUnspent($('#txUnspent').val());
         }
-    }
+*/    }
 
     function txOnChangeJSON() {
         var str = $('#txJSON').val();

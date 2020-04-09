@@ -1689,9 +1689,9 @@ https://www.myetherwallet.com/#offline-transaction';
 		var url = (txType == 'txBCI') ? 'https://blockchain.info/unspent?cors=true&active=' + addr :
             'https://blockexplorer.com/q/mytransactions/' + addr;
 
-        url = prompt('Press OK to download transaction history:', url);
+        //url = prompt('Press OK to download transaction history:', url); //needed to test "Transactions"-tab.
 
-        if (url != null && url != "") {
+        if (url != null && url != "") {//working if url === true
 
             $('#txUnspent').val('');
 

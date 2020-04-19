@@ -699,16 +699,28 @@ to your associated bitcoin address\n\
     var from = '';
     var to = 'hex';
 
+
+	var no_translate = true;			//to don't start translate twise, on autoclick to two buttons - "from", and "to", when converter runned by permalink.
+	
+	function start_translate_once(){
+		if(no_translate === false){		//if need translate, after "from"-button clicked
+			translate();					//translate "from" -> "to"
+		}
+		else{							//else
+			no_translate = false;			//set this to false, and translate on second call.
+		}
+	}
+
     function update_enc_from() {
         $(this).addClass('active');	//add class "active" for input...
         from = $(this).attr('id').substring(5);
-        translate();
+		start_translate_once();		//translate once.
     }
 
     function update_enc_to() {
         $(this).addClass('active');
         to = $(this).attr('id').substring(3);
-        translate();
+		start_translate_once();		//translate once.
     }
 
 	//f3e7d2655e60ab06ca99ddd187f84f49782bb47bac397e9cba677194a643b3c4 from hex -> encoded to text as
@@ -740,15 +752,15 @@ to your associated bitcoin address\n\
 //I don't see this symbols here, so link "download as binary." was been added.
 
     function isHex(str) {
-        return !/[^0123456789abcdef]+/i.test(str);
+		return !/[^0-9A-Fa-f]+/i.test(str); 			//Lower and Upper cased
     }
 
     function isBase58(str) {
-        return !/[^123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+/.test(str);
+        return !/[^1-9A-Za-z]+/.test(str);
     }
 
     function isBase64(str) {
-        return !/[^ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=]+/.test(str) && (str.length % 4) == 0;
+        return !/[^A-Za-z0-9+\/=]+/.test(str) && (str.length % 4) == 0;
     }
 
     function isBin(str) {
@@ -756,7 +768,25 @@ to your associated bitcoin address\n\
     }
 
     function isDec(str) {
-      return !/[^0123456789]+/i.test(str);
+      return !/[^0-9]+/i.test(str);
+    }
+
+    function isBytes(str) {
+		str = ( (str[str.length-1] === ',') ? str.slice(0, str.length-1) : str); 
+      var test = /^(\d{1,3},)*\d{1,3}$/.test(str);
+	  if(test === true){
+		var result = true;
+		var arr = str.split(',');
+		for(var i = 0; i<arr.length; i++){
+			if(+arr[i] > 255){
+				result = false;
+				break;
+			}
+		}
+		return result;
+	  }else{
+		return false;
+	  }
     }
 
     function issubset(a, ssv, min_words) {
@@ -1050,6 +1080,9 @@ to your associated bitcoin address\n\
           // arbitrary text should have higher priority than base58
           enc.push('base58');
         }
+        if (isBytes(str)) {
+          enc.push('bytes');
+        }
 		
 		enc.push('raw');	//just push raw here, to don't disable this.
         return enc;
@@ -1154,6 +1187,16 @@ Or select another encoding to input the text here.");
       return res;
     }
 
+    function fromBytes(str)
+    {
+        return str.split(',').map(function(b){return parseInt(b, 10);})
+    }
+
+    function toDecBytes(bytes) //bytearray -> to string with decimal byte-values, separated with comma.
+    {
+        return bytes.map(function(b){return b.toString(10);}).join(',')
+    }
+
     function fromDec(str)
     {
         var h = new BigInteger(str).toString(16);
@@ -1190,9 +1233,8 @@ Or select another encoding to input the text here.");
     }
 
     function translate() {
-
-        var str = $('#src').val();
-
+//		console.log('translate', 'val: ', $('#src').val(), ', from: ', from, ', to: ', to);
+		var str = $('#src').val();
         if (str.length == 0) {
           update_toolbar(null);
           $('#hint_from').text('');
@@ -1253,6 +1295,8 @@ Or select another encoding to input the text here.");
 					bytes = fromEasy16(str);
 				} else if (from == 'dec') {
 					bytes = fromDec(bstr);
+				} else if (from == 'bytes') {
+					bytes = fromBytes(str);
 				}
 			}
             var ver = '';
@@ -1287,6 +1331,8 @@ Or select another encoding to input the text here.");
                 text = Crypto.SHA256(bytes);
             } else if (to == 'dec') {
                 text = toDec(bytes);
+            } else if (to == 'bytes') {
+                text = toDecBytes(bytes);
             }
         }
 
@@ -1304,8 +1350,21 @@ Or select another encoding to input the text here.");
 		
 		linkText(document.getElementById('dest'), document.getElementById('download-converted'), 'converted.txt')
 		
+		document.getElementById('converter_permalink').innerHTML = ''
+			+	'<a href="'
+			+		window.location.href.split('?')[0]
+			+		'?' +	'convertFrom='	+	from
+			+		'&'	+	'convertTo='	+	to
+			+		'&'	+	'source='		+	encodeURIComponent(str)
+			+	'" target="_blank">'
+			+		'Permalink to convert this from '+from+' to '+to+'.'
+			+	'</a>'
+		;
+		
 		$('#download_as_binary').show();
 		$('#download-converted').show();
+		$('#converter_permalink').show();
+		
     }
 
     function onChangeFrom() {
@@ -2519,6 +2578,27 @@ index.html
         $('#enc_from label input').on('change', update_enc_from );
         $('#enc_to label input').on('change', update_enc_to );
 
+			// permalink support
+			if ( window.location.hash && window.location.hash.indexOf('?')!=-1 ) {
+				var args = window.location.hash.split('?')[1].split('&');
+				var p = {};
+				for ( var i=0; i<args.length; i++ ) {
+					var arg = args[i].split('=');
+					p[arg[0]] = decodeURIComponent(arg[1]);
+				}
+				//if (p.vrMsg && p.vrSig) {
+				if (p.convertFrom && p.convertTo && p.source) {
+					$('#src').val(decodeURIComponent(p.source));
+					from	=	p.convertFrom;
+					to		=	p.convertTo;
+				}
+
+				$('#from_'+from).click();
+				$('#to_'+to).click();
+			}
+//			translate();	//will be runned, onclicks on the buttons.
+			
+		
         // sign
 
         $('#sgSec').val($('#sec').val());

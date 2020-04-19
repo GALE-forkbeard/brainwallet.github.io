@@ -109,7 +109,7 @@
                 <li><a data-target="0x50" href="http://bit.usr.sh:2750"><span class="pull-right">ZET</span>Zetacoin</a></li>
 				<li><a class="selected" data-target="compressed, 0x26, 0xa6" strMessageMagic="Geertcoin Signed Message:\n" href="https://prohashing.com/explorer/Geertcoin/"><span class="pull-right">GEERT</span>GeertCoin</a></li>
 				<li><a data-target="uncompressed, 0x1a, 0x9a" strMessageMagic="Beachcoin Signed Message:\n" href="https://prohashing.com/explorer/Beachcoin/"><span class="pull-right">SAND</span>BeachCoin</a></li>
-				<li><a data-target="uncompressed, 0x07, 0xc6" href="https://miner-control.de/explorer/CGUR"><span class="pull-right">CGUR</span>AllCoinGuru</a></li>
+				<li><a data-target="compressed, 0x07, 0xc6" strMessageMagic="DarkCoin Signed Message:\n" href="https://miner-control.de/explorer/CGUR"><span class="pull-right">CGUR</span>AllCoinGuru</a></li>
 				<li><a data-target="uncompressed, 39, 167" strMessageMagic = "Guncoin Signed Message:\n" href="https://chainz.cryptoid.info/gun/"><span class="pull-right">GUN</span>Guncoin</a></li>
 				<li><a data-target="" href="https://waveswallet.io/"><span class="pull-right">WAVES</span>Waves</a></li>
 				<!--test
@@ -445,9 +445,21 @@ To set up chaincode need paper backup with four strings."></textarea>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_from">
                     <label class="btn btn-default"><input id="from_hex" name="enc_from" type="radio" />Hex</label>
-					<label class="btn btn-default" title="Text with ASCII or UTF-8 encoding.">
-						<input id="from_text" name="enc_from" type="radio"/>Text</label>
-					<label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> <label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> <label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> <label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> <label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> <label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
+					<label class="btn btn-default" title="String with decimal values of bytes, separated with comma.">
+						<input id="from_bytes" name="enc_from" type="radio"/>Bytes
+					</label>
+					<label class="btn btn-default active" title="Text with ASCII or UTF-8 encoding.">
+						<input id="from_text" name="enc_from" type="radio"/>Text
+					</label>
+					<label class="btn btn-default"><input id="from_bin" name="enc_from" type="radio" />Bin</label>
+					<label class="btn btn-default"><input id="from_dec" name="enc_from" type="radio" />Dec</label> 
+					<label class="btn btn-default"><input id="from_base58" name="enc_from" type="radio" />Base58</label> 
+					<label class="btn btn-default"><input id="from_base58check" name="enc_from" type="radio" />B58Check</label> 
+					<label class="btn btn-default"><input id="from_base64" name="enc_from" type="radio" />Base64</label> 
+					<label class="btn btn-default"><input id="from_rfc1751" name="enc_from" type="radio" />Rfc1751</label> 
+					<label class="btn btn-default"><input id="from_mnemonic" name="enc_from" type="radio" />Poetry</label> 
+					<label class="btn btn-default"><input id="from_rot13" name="enc_from" type="radio" />Rot13</label> 
+					<label class="btn btn-default"><input id="from_easy16" name="enc_from" type="radio" />Easy16</label>
 					<label class="btn btn-default"><input id="from_raw" name="enc_from" type="radio" />RAW</label>
                   </div>
                 </div>
@@ -468,9 +480,22 @@ To set up chaincode need paper backup with four strings."></textarea>
                 <div class="col-lg-10 controls">
                   <div class="btn-group" data-toggle="buttons" id="enc_to">
                     <label class="btn btn-default active"><input id="to_hex" name="enc_to" type="radio" />Hex</label>
+					<label class="btn btn-default" title="String with decimal values of bytes, separated with comma.">
+						<input id="to_bytes" name="enc_to" type="radio" />Bytes
+					</label>
 					<label class="btn btn-default" title="Text with ASCII or UTF-8 encoding.">
-						<input id="to_text" name="enc_to" type="radio"/>Text</label>
-					<label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label><label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> <label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> <label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> <label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> <label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> <label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> <label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> <label class="btn btn-default"><input id="to_easy16" name="enc_to" type="radio" />Easy16</label><label class="btn btn-default" id="to_sha256"><input id="to_sha256" name="enc_to" type="radio" />SHA256</label>
+						<input id="to_text" name="enc_to" type="radio"/>Text
+					</label>
+					<label class="btn btn-default"><input id="to_bin" name="enc_from" type="radio" />Bin</label>
+					<label class="btn btn-default"><input id="to_dec" name="enc_from" type="radio" />Dec</label> 
+					<label class="btn btn-default"><input id="to_base58" name="enc_to" type="radio" />Base58</label> 
+					<label class="btn btn-default"><input id="to_base58check" name="enc_to" type="radio" />B58Check</label> 
+					<label class="btn btn-default"><input id="to_base64" name="enc_to" type="radio" />Base64</label> 
+					<label class="btn btn-default"><input id="to_rfc1751" name="enc_to" type="radio" />Rfc1751</label> 
+					<label class="btn btn-default"><input id="to_mnemonic" name="enc_to" type="radio" />Poetry</label> 
+					<label class="btn btn-default"><input id="to_rot13" name="enc_to" type="radio" />Rot13</label> 
+					<label class="btn btn-default"><input id="to_easy16" name="enc_to" type="radio" />Easy16</label>
+					<label class="btn btn-default" id="to_sha256"><input id="to_sha256" name="enc_to" type="radio" />SHA256</label>
                   </div>
                 </div>
               </div>
@@ -484,6 +509,9 @@ To set up chaincode need paper backup with four strings."></textarea>
                   </div>
                 </div>
               </div>
+
+			  <div id="converter_permalink" align="center"></div>
+
             </fieldset>
           </form>
 		  

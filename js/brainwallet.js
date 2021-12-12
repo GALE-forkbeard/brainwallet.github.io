@@ -36,12 +36,12 @@
 	//Bitcoin
 	
 
-	Default_COIN_NAME = "Bitcoin";
-	Default_TICKER = "BTC";
+	Default_COIN_NAME = "Galleoncoin";
+	Default_TICKER = "GALE";
 	Default_PUBLIC_KEY_VERSION = 0x00;
     Default_PRIVATE_KEY_VERSION = 0x80;
-    Default_ADDRESS_URL_PREFIX = 'http://blockchain.info';
-	Default_gen_compressed = false;
+    Default_ADDRESS_URL_PREFIX = 'http://galleon.live';
+	Default_gen_compressed = true;
 
 
 /*
@@ -74,7 +74,7 @@ To change default coin:
 	
 	//this have the value "Bitcoin Signed Message:\n" and defined as default in bitcoinsig.js
 	//see function function msg_digest(message, strMessageMagic)
-	var strMessageMagic = "Bitcoin Signed Message:\n";
+	var strMessageMagic = "DarkNet Signed Message:\n";
 	
     var gen_eckey = null;
     var gen_pt = null;

@@ -7,7 +7,7 @@
 	var PUBLIC_KEY_VERSION;// = 0x47;
 	var PRIVATE_KEY_VERSION;// = 0x80;
 	var ADDRESS_URL_PREFIX;// = 'https://explorer.vertcoin.org/'
-	var compressed;// = false;	//default
+	var compressed = true;// = false;	//default
 
 function armory_extend_chain(pubKey, chainCode, privKey, fromPrivKey
 ,PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {

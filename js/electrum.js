@@ -5,7 +5,7 @@
 PUBLIC_KEY_VERSION;
 PRIVATE_KEY_VERSION;
 ADDRESS_URL_PREFIX;
-compressed;
+compressed = true;
 
 function electrum_extend_chain(pubKey, privKey, n, forChange, fromPrivKey
 , PUBLIC_KEY_VERSION, PRIVATE_KEY_VERSION, ADDRESS_URL_PREFIX, compressed) {
